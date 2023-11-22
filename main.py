@@ -19,6 +19,12 @@ class CredentialsList:
         self.tree = ttk.Treeview(tab, columns=("Title", "Login"), show="headings", height=10)
         self.load_credentials_to_tree()
         self.configure_tree()
+        self.tree.bind("<<TreeviewSelect>>", self.on_click)
+
+    def on_click(self, event):
+        item = self.tree.selection()[0]
+        selection = self.tree.item(item, "values")
+        print(selection)
 
     def load_credentials_to_tree(self):
         for credential in credentials:
