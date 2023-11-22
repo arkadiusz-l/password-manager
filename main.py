@@ -1,6 +1,9 @@
+import sys
 import tkinter as tk
 from dataclasses import dataclass
 from tkinter import ttk
+from sqlalchemy import create_engine
+from install import install
 
 
 @dataclass
@@ -55,5 +58,11 @@ credentials = [
 ]
 
 credentials_list = CredentialsList(credentials_tab, root, tabsystem)
+engine = create_engine("sqlite:///database.db", echo=False, future=True)
+
+if len(sys.argv) > 1 and sys.argv[1] == "install":
+    install(engine)
+    print("Database with tables has been created successfully.")
+    quit()
 
 root.mainloop()
