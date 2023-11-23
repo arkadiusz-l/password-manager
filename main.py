@@ -6,6 +6,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from models import Credential, Site
 from install import install
+from crypto import Crypto
+from cryptography.fernet import InvalidToken
 
 
 @dataclass
@@ -15,10 +17,11 @@ class DTOCredential:
 
 
 class AddPassword:
-    def __init__(self, tab, db, credentials_list, tabsystem):
+    def __init__(self, tab, db, credentials_list, tabsystem, password):
         self.db = db
         self.credentials_list = credentials_list
         self.tabsystem = tabsystem
+        self.crypto = Crypto(password)
 
         site_label = ttk.Label(tab, text="Title")
         site_label.grid(row=0, column=0, padx=5)
@@ -44,7 +47,7 @@ class AddPassword:
             site = Site(name=self.site_textbox.get())
             cred = Credential(
                 login=self.login_textbox.get(),
-                password=self.password_textbox.get(),
+                password=self.crypto.encrypt(self.password_textbox.get()),
                 site=site,
             )
 
@@ -54,18 +57,19 @@ class AddPassword:
             ])
 
             session.commit()
-            print("Added to database.")
 
             self.credentials_list.load_credentials_to_tree()
             self.tabsystem.select(0)
 
 
 class CredentialsList:
-    def __init__(self, tab, root_window, db, tabsystem):
-        self.root_window = root_window
+    def __init__(self, tab, root_window, db, password, tabsystem, main_password_tab):
         self.db = db
+        self.root_window = root_window
         self.tabsystem = tabsystem
+        self.main_password_tab = main_password_tab
         self.tree = ttk.Treeview(tab, columns=("Title", "Login"), show="headings", height=10)
+        self.crypto = Crypto(password)
         self.load_credentials_to_tree()
         self.configure_tree()
         self.tree.bind("<<TreeviewSelect>>", self.on_click)
@@ -73,7 +77,22 @@ class CredentialsList:
     def on_click(self, event):
         item = self.tree.selection()[0]
         selection = self.tree.item(item, "values")
-        print(selection)
+        with Session(self.db) as session:
+            credential = session.query(Credential).filter(
+                Site.name == selection[0],
+                Credential.login == selection[1],
+                ).one()
+
+            try:
+                decrypted = self.crypto.decrypt(credential.password)
+            except InvalidToken:
+                self.tree.pack_forget()
+                self.tabsystem.add(self.main_password_tab, text="Log In")
+                self.tabsystem.select(main_password_tab)
+                return
+
+        self.root_window.clipboard_clear()
+        self.root_window.clipboard_append(decrypted)
 
     def load_credentials_to_tree(self):
         with Session(self.db) as session:
@@ -88,32 +107,43 @@ class CredentialsList:
         self.tree.pack()
 
 
-root = tk.Tk()
-root.title("Password Manager")
-root.resizable(False, False)
-root_width = 450
-root_height = 355
-screen_width = root.winfo_screenwidth()
-screen_height = root.winfo_screenheight()
-x_offset = int(screen_width / 2 - root_width / 2)
-y_offset = int(screen_height / 2 - root_height / 2)
-root.geometry(f"{root_width}x{root_height}+{x_offset}+{y_offset}")
+if __name__ == '__main__':
+    def pass_on_click():
+        tabsystem.hide(main_password_tab)
+        credentials_list = CredentialsList(credentials_tab, root, engine, main_password_textbox.get(), tabsystem, main_password_tab)
+        AddPassword(add_credentials_tab, engine, credentials_list, tabsystem, main_password_textbox.get())
 
-tabsystem = ttk.Notebook(root)
-credentials_tab = tk.Frame(tabsystem)
-add_credentials_tab = tk.Frame(tabsystem)
+    root = tk.Tk()
+    root.title("Password Manager")
+    root.resizable(False, False)
+    root_width = 350
+    root_height = 350
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x_offset = int(screen_width / 2 - root_width / 2)
+    y_offset = int(screen_height / 2 - root_height / 2)
+    root.geometry(f"{root_width}x{root_height}+{x_offset}+{y_offset}")
 
-tabsystem.add(credentials_tab, text="Credentials")
-tabsystem.add(add_credentials_tab, text="Add new")
-tabsystem.pack(expand=1, fill="both")
+    tabsystem = ttk.Notebook(root)
+    main_password_tab = ttk.Frame(tabsystem)
+    credentials_tab = tk.Frame(tabsystem)
+    add_credentials_tab = tk.Frame(tabsystem)
+    tabsystem.add(main_password_tab, text="Log In")
+    tabsystem.add(credentials_tab, text="Credentials")
+    tabsystem.add(add_credentials_tab, text="Add new")
+    tabsystem.pack(expand=1, fill="both")
+    main_password_label = ttk.Label(main_password_tab, text="Enter main password:")
+    main_password_label.pack(padx=5, pady=5)
+    main_password_textbox = ttk.Entry(main_password_tab, show="*")
+    main_password_textbox.pack(padx=5, pady=5)
+    main_password_button = ttk.Button(main_password_tab, text="Log In", command=pass_on_click)
+    main_password_button.pack(padx=5, pady=5)
 
-engine = create_engine("sqlite:///database.db", echo=False, future=True)
-credentials_list = CredentialsList(credentials_tab, root, engine, tabsystem)
-add_password = AddPassword(add_credentials_tab, engine, credentials_list, tabsystem)
+    engine = create_engine("sqlite:///database.db", echo=False, future=True)
 
-if len(sys.argv) > 1 and sys.argv[1] == "install":
-    install(engine)
-    print("Database with tables has been created successfully.")
-    quit()
+    if len(sys.argv) > 1 and sys.argv[1] == "install":
+        install(engine)
+        print("Database with tables has been created successfully.")
+        quit()
 
-root.mainloop()
+    root.mainloop()
