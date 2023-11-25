@@ -88,6 +88,7 @@ class CredentialsList:
         self.root_window.clipboard_append(decrypted)
 
     def load_credentials_to_tree(self):
+        self.tree.delete(*self.tree.get_children())
         with Session(self.db) as session:
             credentials = session.query(Credential).all()
             for credential in credentials:
