@@ -1,22 +1,15 @@
 import sys
 import tkinter as tk
-from dataclasses import dataclass
 from tkinter import ttk
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from models import Credential, Site
+from models import CredentialModel, SiteModel
 from install import install
 from crypto import Crypto
 from cryptography.fernet import InvalidToken
 
 
-@dataclass
-class DTOCredential:
-    title: str
-    login: str
-
-
-class AddPassword:
+class AddCredential:
     def __init__(self, tab, db, credentials_list, tabsystem, main_password):
         self.db = db
         self.credentials_list = credentials_list
@@ -40,48 +33,52 @@ class AddPassword:
 
         button = ttk.Button(tab, text="Add")
         button.grid(row=3, column=1, padx=5)
-        button.bind("<Button-1>", self.on_click)
+        button.bind("<Button-1>", self.on_click_add_password)
 
-    def on_click(self, event):
+    def on_click_add_password(self, event):
         with Session(self.db) as session:
             site = self.site_textbox.get()
-            site = Site(name=site)
+            site = SiteModel(name=site)
             login = self.login_textbox.get()
-            password = self.crypto.encrypt(self.password_textbox.get())
-            credential = Credential(site=site, login=login, password=password)
+            password = self.password_textbox.get()
+            password = self.crypto.encrypt(password)
+            credential = CredentialModel(site=site, login=login, password=password)
             session.add_all([site, credential])
             session.commit()
+            self.clear_textboxes()
             self.credentials_list.load_credentials_to_tree()
             self.tabsystem.select(0)
 
+    def clear_textboxes(self):
+        self.site_textbox.delete(0, tk.END)
+        self.login_textbox.delete(0, tk.END)
+        self.password_textbox.delete(0, tk.END)
+
 
 class CredentialsList:
-    def __init__(self, tab, root_window, db, main_password, tabsystem, main_password_tab):
+    def __init__(self, tab, root_window, db, main_password, tabsystem):
         self.root_window = root_window
         self.db = db
         self.tabsystem = tabsystem
-        self.main_password_tab = main_password_tab
-        self.tree = ttk.Treeview(tab, columns=("Title", "Login"), show="headings", height=15)
+        self.tree = ttk.Treeview(tab, columns=("Strona", "Login"), show="headings", height=15)
         self.configure_tree()
         self.crypto = Crypto(main_password)
-        self.tree.bind("<<TreeviewSelect>>", self.on_click)
+        self.tree.bind("<<TreeviewSelect>>", self.click_on_selected)
         self.load_credentials_to_tree()
 
-    def on_click(self, event):
+    def click_on_selected(self, event):
         item = self.tree.selection()[0]
         selection = self.tree.item(item, "values")
         with Session(self.db) as session:
-            credential = session.query(Credential).filter(
-                Site.name == selection[0],
-                Credential.login == selection[1],
+            credential = session.query(CredentialModel).filter(
+                SiteModel.name == selection[0],
+                CredentialModel.login == selection[1],
                 ).one()
 
             try:
                 decrypted = self.crypto.decrypt(credential.password)
             except InvalidToken:
                 self.tree.pack_forget()
-                self.tabsystem.add(self.main_password_tab, text="Log In")
-                self.tabsystem.select(self.main_password_tab)
                 return
 
         self.root_window.clipboard_clear()
@@ -90,37 +87,39 @@ class CredentialsList:
     def load_credentials_to_tree(self):
         self.tree.delete(*self.tree.get_children())
         with Session(self.db) as session:
-            credentials = session.query(Credential).all()
+            credentials = session.query(CredentialModel).all()
             for credential in credentials:
                 self.tree.insert("", "end", values=(credential.site.name, credential.login))
 
     def configure_tree(self):
-        self.tree.column("#1", anchor=tk.CENTER, stretch=tk.YES, width=175)
-        self.tree.heading("#1", text="Title")
-        self.tree.column("#2", anchor=tk.CENTER, stretch=tk.YES, width=175)
+        self.tree.column("#1", anchor=tk.CENTER, stretch=tk.YES, width=225)
+        self.tree.heading("#1", text="Strona")
+        self.tree.column("#2", anchor=tk.CENTER, stretch=tk.YES, width=225)
         self.tree.heading("#2", text="Login")
         self.tree.pack()
 
 
 if __name__ == '__main__':
-    def pass_on_click():
+    def on_click_log_in():
+        main_password = main_password_textbox.get()
+
         tabsystem = ttk.Notebook(root)
-        main_password_tab = ttk.Frame(tabsystem)
         credentials_tab = ttk.Frame(tabsystem)
-        add_credentials_tab = ttk.Frame(tabsystem)
+        add_credential_tab = ttk.Frame(tabsystem)
         tabsystem.add(credentials_tab, text="Credentials")
-        tabsystem.add(add_credentials_tab, text="Add new")
+        tabsystem.add(add_credential_tab, text="Add new")
         tabsystem.pack(expand=True, fill="both")
-        credentials_list = CredentialsList(credentials_tab, root, engine, main_password_textbox.get(), tabsystem, main_password_tab)
-        AddPassword(add_credentials_tab, engine, credentials_list, tabsystem, main_password_textbox.get())
-        main_password_label.pack_forget()
-        main_password_textbox.pack_forget()
-        main_password_button.pack_forget()
+        credentials_tab = CredentialsList(credentials_tab, root, db_engine, main_password, tabsystem)
+        AddCredential(add_credential_tab, db_engine, credentials_tab, tabsystem, main_password)
+
+        main_password_label.forget()
+        main_password_textbox.forget()
+        main_password_button.forget()
 
     root = tk.Tk()
     root.title("Password Manager")
     root.resizable(False, False)
-    root_width = 350
+    root_width = 450
     root_height = 350
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
@@ -129,16 +128,16 @@ if __name__ == '__main__':
     root.geometry(f"{root_width}x{root_height}+{x_offset}+{y_offset}")
 
     main_password_label = ttk.Label(root, text="Enter main password:")
-    main_password_label.pack(padx=5, pady=5)
+    main_password_label.pack(padx=5, pady=5, anchor=tk.CENTER)
     main_password_textbox = ttk.Entry(root, show="*")
-    main_password_textbox.pack(padx=5, pady=5)
-    main_password_button = ttk.Button(root, text="Log In", command=pass_on_click)
-    main_password_button.pack(padx=5, pady=5)
+    main_password_textbox.pack(padx=5, pady=5, anchor=tk.CENTER)
+    main_password_button = ttk.Button(root, text="Log In", command=on_click_log_in)
+    main_password_button.pack(padx=5, pady=5, anchor=tk.CENTER)
 
-    engine = create_engine("sqlite:///database.db", echo=False, future=True)
+    db_engine = create_engine("sqlite:///database.db", echo=False, future=True)
 
     if len(sys.argv) > 1 and sys.argv[1] == "install":
-        install(engine)
+        install(db_engine)
         print("Database with tables has been created successfully.")
         quit()
 
