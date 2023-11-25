@@ -3,36 +3,58 @@ import tkinter as tk
 from tkinter import ttk
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from models import CredentialModel, SiteModel
-from install import install
 from crypto import Crypto
-from cryptography.fernet import InvalidToken
+from install import create_database, create_main_password
+from models import CredentialModel, SiteModel, UserModel
 
 
 class LogIn:
-    def __init__(self, main_window):
-        self.main_password_label = ttk.Label(main_window, text="Enter main password:")
+    def __init__(self, window, db):
+        self.db = db
+        self.window = window
+        self.main_password_label = ttk.Label(self.window, text="Enter main password:")
         self.main_password_label.pack(padx=5, pady=5, anchor=tk.CENTER)
-        self.main_password_textbox = ttk.Entry(main_window, show="*")
+        self.main_password_textbox = ttk.Entry(self.window, show="*")
         self.main_password_textbox.pack(padx=5, pady=5, anchor=tk.CENTER)
-        self.main_password_button = ttk.Button(main_window, text="Log In", command=self.on_click_log_in)
+        self.main_password_button = ttk.Button(self.window, text="Log In", command=self.on_click_log_in)
         self.main_password_button.pack(padx=5, pady=5, anchor=tk.CENTER)
+        self.message = tk.StringVar()
+        self.message_label = ttk.Label(self.window, textvariable=self.message)
+        self.message_label.pack(padx=5, pady=5, anchor=tk.CENTER)
+        self.user_password = ""
+
+    def check_main_password(self, password):
+        with Session(self.db) as session:
+            user_model = session.query(UserModel).get(1)
+
+        return user_model.main_password == password
 
     def on_click_log_in(self):
-        main_password = self.main_password_textbox.get()
+        self.user_password = self.main_password_textbox.get()
+        password_correct = self.check_main_password(self.user_password)
 
+        if password_correct:
+            Tab().show_tabs()
+
+        self.message.set("Password incorrect!")
+
+
+class Tab:
+
+    @staticmethod
+    def show_tabs():
         tabsystem = ttk.Notebook(root)
         credentials_tab = ttk.Frame(tabsystem)
         add_credentials_tab = ttk.Frame(tabsystem)
         tabsystem.add(credentials_tab, text="Credentials")
         tabsystem.add(add_credentials_tab, text="Add new")
-        tabsystem.pack(expand=True, fill="both")
-        credentials_list = CredentialsList(credentials_tab, root, db_engine, main_password, tabsystem)
-        AddCredential(add_credentials_tab, db_engine, credentials_list, tabsystem, main_password)
-
-        self.main_password_label.forget()
-        self.main_password_textbox.forget()
-        self.main_password_button.forget()
+        tabsystem.pack()
+        credentials_list = CredentialsList(credentials_tab, root, db_engine, log_in.user_password, tabsystem)
+        AddCredential(add_credentials_tab, db_engine, credentials_list, tabsystem, log_in.user_password)
+        log_in.main_password_label.pack_forget()
+        log_in.main_password_textbox.pack_forget()
+        log_in.main_password_button.pack_forget()
+        log_in.message_label.pack_forget()
 
 
 class AddCredential:
@@ -86,7 +108,7 @@ class CredentialsList:
         self.root_window = root_window
         self.db = db
         self.tabsystem = tabsystem
-        self.tree = None
+        self.tree = ttk.Treeview(tab, columns=("Title", "Login"), show="headings", height=16)
         self.configure_tree(tab)
         self.crypto = Crypto(main_password)
         self.load_credentials_to_tree()
@@ -100,11 +122,7 @@ class CredentialsList:
                 CredentialModel.login == selection[1],
                 ).one()
 
-            try:
-                decrypted = self.crypto.decrypt(credential.password)
-            except InvalidToken:
-                self.tree.pack_forget()
-                return
+            decrypted = self.crypto.decrypt(credential.password)
 
         self.root_window.clipboard_clear()
         self.root_window.clipboard_append(decrypted)
@@ -117,7 +135,6 @@ class CredentialsList:
                 self.tree.insert("", "end", values=(credential.site.name, credential.login))
 
     def configure_tree(self, tab):
-        self.tree = ttk.Treeview(tab, columns=("Title", "Login"), show="headings", height=16)
         scrollbar = ttk.Scrollbar(tab, orient="vertical", command=self.tree.yview)
         scrollbar.pack(side='right', fill='y')
         self.tree.configure(yscrollcommand=scrollbar.set)
@@ -133,8 +150,8 @@ if __name__ == '__main__':
     db_engine = create_engine("sqlite:///database.db", echo=False, future=True)
 
     if len(sys.argv) > 1 and sys.argv[1] == "install":
-        install(db_engine)
-        print("Database with tables has been created successfully.")
+        create_database(db_engine)
+        create_main_password(db_engine)
         quit()
 
     root = tk.Tk()
@@ -148,6 +165,6 @@ if __name__ == '__main__':
     y_offset = int(screen_height / 2 - root_height / 2)
     root.geometry(f"{root_width}x{root_height}+{x_offset}+{y_offset}")
 
-    log_in = LogIn(root)
+    log_in = LogIn(root, db_engine)
 
     root.mainloop()
