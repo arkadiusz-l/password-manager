@@ -17,3 +17,9 @@ class CredentialModel(Base):
     password = Column(String(30))
     site_id = Column(Integer, ForeignKey("sites.id"))
     site = relationship("SiteModel", backref=backref("credentials", uselist=False))
+
+
+class UserModel(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    main_password = Column(String(30))
