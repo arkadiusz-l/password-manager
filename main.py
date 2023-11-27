@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import NoResultFound
 from crypto import Crypto
 from install import create_database, create_main_password
 from models import CredentialModel, UserModel
@@ -83,18 +84,26 @@ class AddCredential:
         button.grid(row=3, column=1, padx=5)
         button.bind("<Button-1>", self.on_click_add_password)
 
+        self.message = tk.StringVar()
+        self.message_label = ttk.Label(tab, textvariable=self.message)
+        self.message_label.grid(row=4, column=1)
+
     def on_click_add_password(self, event):
-        with Session(self.db) as session:
-            title = self.title_textbox.get()
-            login = self.login_textbox.get()
-            password = self.password_textbox.get()
+        title = self.title_textbox.get()
+        login = self.login_textbox.get()
+        password = self.password_textbox.get()
+        try:
+            self.credentials_list.get_credential_from_db(title, login)
+            self.message.set("The given pair of title + login already exists!")
+        except NoResultFound:
             password = self.crypto.encrypt(password)
-            credential = CredentialModel(title=title, login=login, password=password)
-            session.add(credential)
-            session.commit()
-        self.clear_textboxes()
-        self.credentials_list.load_credentials_to_tree()
-        self.tabsystem.select(0)
+            with Session(self.db) as session:
+                credential = CredentialModel(title=title, login=login, password=password)
+                session.add(credential)
+                session.commit()
+            self.tabsystem.select(0)
+            self.clear_textboxes()
+            self.credentials_list.load_credentials_to_tree()
 
     def clear_textboxes(self):
         self.title_textbox.delete(0, tk.END)
@@ -112,14 +121,20 @@ class CredentialsList:
         self.crypto = Crypto(main_password)
         self.load_credentials_to_tree()
 
+    def get_credential_from_db(self, title, login):
+        with Session(self.db) as session:
+            return session.query(CredentialModel).filter(
+                CredentialModel.title == title,
+                CredentialModel.login == login,
+                ).one()
+
     def click_on_selected(self, event):
         item = self.tree.selection()[0]
         selection = self.tree.item(item, "values")
-        with Session(self.db) as session:
-            credential = session.query(CredentialModel).filter(
-                CredentialModel.login == selection[1],
-                ).one()
-            decrypted = self.crypto.decrypt(credential.password)
+        title = selection[0]
+        login = selection[1]
+        credential = self.get_credential_from_db(title, login)
+        decrypted = self.crypto.decrypt(credential.password)
 
         self.root_window.clipboard_clear()
         self.root_window.clipboard_append(decrypted)
