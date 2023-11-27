@@ -33,7 +33,6 @@ class LogIn:
     def on_click_log_in(self):
         self.user_password = self.main_password_textbox.get()
         password_correct = self.check_main_password(self.user_password)
-
         if password_correct:
             Tab().show_tabs()
 
@@ -42,8 +41,7 @@ class LogIn:
 
 class Tab:
 
-    @staticmethod
-    def show_tabs():
+    def show_tabs(self):
         tabsystem = ttk.Notebook(root)
         credentials_tab = ttk.Frame(tabsystem)
         add_credentials_tab = ttk.Frame(tabsystem)
@@ -52,10 +50,14 @@ class Tab:
         tabsystem.pack()
         credentials_list = CredentialsList(credentials_tab, root, db_engine, log_in.user_password, tabsystem)
         AddCredential(add_credentials_tab, db_engine, credentials_list, tabsystem, log_in.user_password)
-        log_in.main_password_label.pack_forget()
-        log_in.main_password_textbox.pack_forget()
-        log_in.main_password_button.pack_forget()
-        log_in.message_label.pack_forget()
+        self.clear_tab()
+
+    @staticmethod
+    def clear_tab():
+        log_in.main_password_label.destroy()
+        log_in.main_password_textbox.destroy()
+        log_in.main_password_button.destroy()
+        log_in.message_label.destroy()
 
 
 class AddCredential:
@@ -82,13 +84,13 @@ class AddCredential:
 
         button = ttk.Button(tab, text="Add")
         button.grid(row=3, column=1, padx=5)
-        button.bind("<Button-1>", self.on_click_add_password)
+        button.bind("<Button-1>", self.on_click_add_credential)
 
         self.message = tk.StringVar()
         self.message_label = ttk.Label(tab, textvariable=self.message)
         self.message_label.grid(row=4, column=1)
 
-    def on_click_add_password(self, event):
+    def on_click_add_credential(self, event):
         title = self.title_textbox.get()
         login = self.login_textbox.get()
         password = self.password_textbox.get()
@@ -102,13 +104,14 @@ class AddCredential:
                 session.add(credential)
                 session.commit()
             self.tabsystem.select(0)
-            self.clear_textboxes()
+            self.clear_tab()
             self.credentials_list.load_credentials_to_tree()
 
-    def clear_textboxes(self):
+    def clear_tab(self):
         self.title_textbox.delete(0, tk.END)
         self.login_textbox.delete(0, tk.END)
         self.password_textbox.delete(0, tk.END)
+        self.message.set("")
 
 
 class CredentialsList:
