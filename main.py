@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from crypto import Crypto
 from install import create_database, create_main_password
-from models import CredentialModel, SiteModel, UserModel
+from models import CredentialModel, UserModel
 
 
 class LogIn:
@@ -86,7 +86,6 @@ class AddCredential:
     def on_click_add_password(self, event):
         with Session(self.db) as session:
             site = self.site_textbox.get()
-            site = SiteModel(name=site)
             login = self.login_textbox.get()
             password = self.password_textbox.get()
             password = self.crypto.encrypt(password)
@@ -118,7 +117,6 @@ class CredentialsList:
         selection = self.tree.item(item, "values")
         with Session(self.db) as session:
             credential = session.query(CredentialModel).filter(
-                SiteModel.name == selection[0],
                 CredentialModel.login == selection[1],
                 ).one()
 
