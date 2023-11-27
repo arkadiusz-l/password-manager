@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from crypto import Crypto
 from install import create_database, create_main_password
-from models import CredentialModel, SiteModel, UserModel
+from models import CredentialModel, UserModel
 
 
 class LogIn:
@@ -64,17 +64,17 @@ class AddCredential:
         self.tabsystem = tabsystem
         self.crypto = Crypto(main_password)
 
-        site_label = ttk.Label(tab, text="Title")
-        site_label.grid(row=0, column=0, padx=5, sticky=tk.E)
-        self.site_textbox = ttk.Entry(tab)
-        self.site_textbox.grid(row=0, column=1, pady=5)
+        title_label = ttk.Label(tab, text="Title:")
+        title_label.grid(row=0, column=0, padx=5, sticky=tk.E)
+        self.title_textbox = ttk.Entry(tab)
+        self.title_textbox.grid(row=0, column=1, pady=5)
 
-        login_label = ttk.Label(tab, text="Login")
+        login_label = ttk.Label(tab, text="Login:")
         login_label.grid(row=1, column=0, padx=5, sticky=tk.E)
         self.login_textbox = ttk.Entry(tab)
         self.login_textbox.grid(row=1, column=1, pady=5)
 
-        password_label = ttk.Label(tab, text="Password")
+        password_label = ttk.Label(tab, text="Password:")
         password_label.grid(row=2, column=0, padx=5, sticky=tk.E)
         self.password_textbox = ttk.Entry(tab, show="*")
         self.password_textbox.grid(row=2, column=1, pady=5)
@@ -85,20 +85,19 @@ class AddCredential:
 
     def on_click_add_password(self, event):
         with Session(self.db) as session:
-            site = self.site_textbox.get()
-            site = SiteModel(name=site)
+            title = self.title_textbox.get()
             login = self.login_textbox.get()
             password = self.password_textbox.get()
             password = self.crypto.encrypt(password)
-            credential = CredentialModel(site=site, login=login, password=password)
-            session.add_all([site, credential])
+            credential = CredentialModel(title=title, login=login, password=password)
+            session.add(credential)
             session.commit()
-            self.clear_textboxes()
-            self.credentials_list.load_credentials_to_tree()
-            self.tabsystem.select(0)
+        self.clear_textboxes()
+        self.credentials_list.load_credentials_to_tree()
+        self.tabsystem.select(0)
 
     def clear_textboxes(self):
-        self.site_textbox.delete(0, tk.END)
+        self.title_textbox.delete(0, tk.END)
         self.login_textbox.delete(0, tk.END)
         self.password_textbox.delete(0, tk.END)
 
@@ -118,10 +117,8 @@ class CredentialsList:
         selection = self.tree.item(item, "values")
         with Session(self.db) as session:
             credential = session.query(CredentialModel).filter(
-                SiteModel.name == selection[0],
                 CredentialModel.login == selection[1],
                 ).one()
-
             decrypted = self.crypto.decrypt(credential.password)
 
         self.root_window.clipboard_clear()
@@ -132,7 +129,7 @@ class CredentialsList:
         with Session(self.db) as session:
             credentials = session.query(CredentialModel).all()
             for credential in credentials:
-                self.tree.insert("", "end", values=(credential.site.name, credential.login))
+                self.tree.insert("", "end", values=(credential.title, credential.login))
 
     def configure_tree(self, tab):
         scrollbar = ttk.Scrollbar(tab, orient="vertical", command=self.tree.yview)

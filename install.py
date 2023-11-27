@@ -6,16 +6,10 @@ from models import UserModel
 def create_database(engine):
     meta = MetaData()
 
-    sites = Table(
-        "sites", meta,
-        Column("id", Integer, primary_key=True),
-        Column("name", String),
-    )
-
     credentials = Table(
         "credentials", meta,
         Column("id", Integer, primary_key=True),
-        Column("site_id", Integer),
+        Column("title", String),
         Column("login", String),
         Column("password", String),
     )
