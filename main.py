@@ -116,6 +116,10 @@ class AddCredential:
         title = self.title_textbox.get()
         login = self.login_textbox.get()
         password = self.password_textbox.get()
+        if title == "" or login == "" or password == "":
+            self.message.set("Please complete all fields")
+            return
+
         try:
             self.credentials_list.get_credential_from_db(title, login)
             self.message.set("The given pair of title + login already exists!")
