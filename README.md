@@ -9,9 +9,10 @@ The application is secured by main password You create during install.\
 Your passwords are not visible from the user interface. They are stored in the database as encrypted!
 
 ## Key features
-* Store your passwords encrypted in the database.
-* One main password for your all credentials.
-* Generate a random password, difficult to crack or guess.
+* One main password for all your credentials.
+* Storing your passwords encrypted.
+* Generating a random password that is difficult to crack or guess.
+* Checking if the password meets complexity requirements.
 
 ## Installation
 Just clone the repo and type:
