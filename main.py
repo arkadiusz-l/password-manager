@@ -1,12 +1,13 @@
 import sys
 import tkinter as tk
 from tkinter import ttk
+from hashlib import sha1
 from random import choices, shuffle
 from string import ascii_letters, punctuation
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import NoResultFound
-from install import create_database, create_main_password
+from install import create_database
 from models import CredentialModel, UserModel
 from crypto import Crypto
 
@@ -26,11 +27,19 @@ class LogIn:
         self.message_label.pack(padx=5, pady=5, anchor=tk.CENTER)
         self.user_password = ""
 
+    @staticmethod
+    def calculate_password_hash(password):
+        password = password.encode("utf-8")
+        password_hash = sha1(password).hexdigest()
+        return password_hash
+
     def check_main_password(self, password):
+        password_hash = self.calculate_password_hash(password)
         with Session(self.db) as session:
             user_model = session.query(UserModel).get(1)
+            password_hash_from_db = user_model.main_password
 
-        return user_model.main_password == password
+        return password_hash_from_db == password_hash
 
     def on_click_log_in(self):
         self.user_password = self.main_password_textbox.get()
@@ -152,7 +161,7 @@ class CredentialsList:
             return session.query(CredentialModel).filter(
                 CredentialModel.title == title,
                 CredentialModel.login == login,
-                ).one()
+            ).one()
 
     def click_on_selected(self, event):
         item = self.tree.selection()[0]
@@ -185,12 +194,21 @@ class CredentialsList:
 
 
 if __name__ == '__main__':
-    db_engine = create_engine("sqlite:///database.db", echo=False, future=True)
+    def install():
+        if len(sys.argv) > 1 and sys.argv[1] == "install":
+            create_database(db_engine)
+            main_password = input("Enter main password:\n")
+            main_password_hash = LogIn.calculate_password_hash(main_password)
 
-    if len(sys.argv) > 1 and sys.argv[1] == "install":
-        create_database(db_engine)
-        create_main_password(db_engine)
-        quit()
+            with Session(db_engine) as session:
+                user = UserModel(id=1, main_password=main_password_hash)
+                session.add(user)
+                session.commit()
+            print("Main password saved successfully.")
+            quit()
+
+    db_engine = create_engine("sqlite:///database.db", echo=False, future=True)
+    install()
 
     root = tk.Tk()
     root.title("Password Manager")
