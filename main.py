@@ -1,12 +1,14 @@
 import sys
 import tkinter as tk
 from tkinter import ttk
+from random import choices, shuffle
+from string import ascii_letters, punctuation
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import NoResultFound
-from crypto import Crypto
 from install import create_database, create_main_password
 from models import CredentialModel, UserModel
+from crypto import Crypto
 
 
 class LogIn:
@@ -82,9 +84,13 @@ class AddCredential:
         self.password_textbox = ttk.Entry(tab, show="*")
         self.password_textbox.grid(row=2, column=1, pady=5)
 
-        button = ttk.Button(tab, text="Add")
-        button.grid(row=3, column=1, padx=5)
-        button.bind("<Button-1>", self.on_click_add_credential)
+        generate_button = ttk.Button(tab, text="Generate")
+        generate_button.grid(row=2, column=2, padx=10)
+        generate_button.bind("<Button-1>", self.on_click_generate)
+
+        add_button = ttk.Button(tab, text="Add")
+        add_button.grid(row=3, column=1, padx=5)
+        add_button.bind("<Button-1>", self.on_click_add_credential)
 
         self.message = tk.StringVar()
         self.message_label = ttk.Label(tab, textvariable=self.message)
@@ -112,6 +118,23 @@ class AddCredential:
         self.login_textbox.delete(0, tk.END)
         self.password_textbox.delete(0, tk.END)
         self.message.set("")
+
+    @staticmethod
+    def generate_password(letters, digits, specials):
+        all_letters = ascii_letters
+        all_digits = "".join(map(str, range(0, 10)))
+        all_special_characters = punctuation
+        password = choices(population=all_digits, k=digits)
+        password += choices(population=all_letters, k=letters)
+        password += choices(population=all_special_characters, k=specials)
+        shuffle(password)
+        password = "".join(password)
+        return password
+
+    def on_click_generate(self, event):
+        password = self.generate_password(letters=5, digits=2, specials=1)
+        self.password_textbox.delete(0, tk.END)
+        self.password_textbox.insert(0, password)
 
 
 class CredentialsList:
