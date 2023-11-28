@@ -41,7 +41,7 @@ class LogIn:
     def check_main_password(self, password):
         password_hash = self.calculate_password_hash(password)
         with Session(self.db) as session:
-            user_model = session.query(UserModel).get(1)
+            user_model = session.get(UserModel, 1)
             password_hash_from_db = user_model.main_password
 
         return password_hash_from_db == password_hash
