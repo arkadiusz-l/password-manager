@@ -17,14 +17,18 @@ class LogIn:
         self.db = db
         self.window = window
         self.main_password_label = ttk.Label(self.window, text="Enter main password:")
-        self.main_password_label.pack(padx=5, pady=5, anchor=tk.CENTER)
+        self.main_password_label.place(relx=0.5, rely=0.3, anchor=tk.CENTER)
         self.main_password_textbox = ttk.Entry(self.window, show="*")
-        self.main_password_textbox.pack(padx=5, pady=5, anchor=tk.CENTER)
-        self.main_password_button = ttk.Button(self.window, text="Log In", command=self.on_click_log_in)
-        self.main_password_button.pack(padx=5, pady=5, anchor=tk.CENTER)
+        self.main_password_textbox.place(relx=0.5, rely=0.4, anchor=tk.CENTER)
+        self.main_password_button = ttk.Button(self.window, text="Log In")
+        self.main_password_button.bind("<Button-1>", self.on_click_log_in)
+        self.main_password_button.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         self.message = tk.StringVar()
-        self.message_label = ttk.Label(self.window, textvariable=self.message)
-        self.message_label.pack(padx=5, pady=5, anchor=tk.CENTER)
+        self.message_label = ttk.Label(
+            self.window, textvariable=self.message, font=("Segoe UI", 9, "bold"),
+            foreground="#f02626"
+        )
+        self.message_label.place(relx=0.5, rely=0.6, anchor=tk.CENTER)
         self.user_password = ""
 
     @staticmethod
@@ -41,7 +45,7 @@ class LogIn:
 
         return password_hash_from_db == password_hash
 
-    def on_click_log_in(self):
+    def on_click_log_in(self, event):
         self.user_password = self.main_password_textbox.get()
         password_correct = self.check_main_password(self.user_password)
         if password_correct:
@@ -79,31 +83,34 @@ class AddCredential:
         self.crypto = Crypto(main_password)
 
         title_label = ttk.Label(tab, text="Title:")
-        title_label.grid(row=0, column=0, padx=5, sticky=tk.E)
+        title_label.place(relx=0.0, rely=0.1, x=50, anchor=tk.W)
         self.title_textbox = ttk.Entry(tab)
-        self.title_textbox.grid(row=0, column=1, pady=5)
+        self.title_textbox.place(relx=0.0, rely=0.1, x=115, anchor=tk.W, width=200)
 
         login_label = ttk.Label(tab, text="Login:")
-        login_label.grid(row=1, column=0, padx=5, sticky=tk.E)
+        login_label.place(relx=0.0, rely=0.2, x=50, anchor=tk.W)
         self.login_textbox = ttk.Entry(tab)
-        self.login_textbox.grid(row=1, column=1, pady=5)
+        self.login_textbox.place(relx=0.0, rely=0.2, x=115, anchor=tk.W, width=200)
 
         password_label = ttk.Label(tab, text="Password:")
-        password_label.grid(row=2, column=0, padx=5, sticky=tk.E)
+        password_label.place(relx=0.0, rely=0.3, x=50, anchor=tk.W)
         self.password_textbox = ttk.Entry(tab, show="*")
-        self.password_textbox.grid(row=2, column=1, pady=5)
+        self.password_textbox.place(relx=0.0, rely=0.3, x=115, anchor=tk.W, width=200)
 
         generate_button = ttk.Button(tab, text="Generate")
-        generate_button.grid(row=2, column=2, padx=10)
+        generate_button.place(relx=0.0, rely=0.3, x=325, anchor=tk.W)
         generate_button.bind("<Button-1>", self.on_click_generate)
 
         add_button = ttk.Button(tab, text="Add")
-        add_button.grid(row=3, column=1, padx=5)
+        add_button.place(relx=0.5, rely=0.4, anchor=tk.CENTER)
         add_button.bind("<Button-1>", self.on_click_add_credential)
 
         self.message = tk.StringVar()
-        self.message_label = ttk.Label(tab, textvariable=self.message)
-        self.message_label.grid(row=4, column=1)
+        self.message_label = ttk.Label(
+            tab, textvariable=self.message, font=("Segoe UI", 9, "bold"),
+            foreground="#f02626"
+        )
+        self.message_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
     def on_click_add_credential(self, event):
         title = self.title_textbox.get()
@@ -206,6 +213,7 @@ if __name__ == '__main__':
                 session.commit()
             print("Main password saved successfully.")
             quit()
+
 
     db_engine = create_engine("sqlite:///database.db", echo=False, future=True)
     install()
