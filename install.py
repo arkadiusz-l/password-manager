@@ -1,6 +1,4 @@
 from sqlalchemy import MetaData, Table, Column, Integer, String
-from sqlalchemy.orm import Session
-from models import UserModel
 
 
 def create_database(engine):
@@ -21,15 +19,6 @@ def create_database(engine):
     )
 
     meta.create_all(engine)
+    print("Database with tables has been created successfully.")
 
     return engine
-
-
-def create_main_password(engine):
-    main_password = input("Enter main password:\n")
-    print("Database with tables has been created successfully.")
-    with Session(engine) as s:
-        user = UserModel(id=1, main_password=main_password)
-        s.add(user)
-        s.commit()
-    print("Main password saved successfully.")
