@@ -20,9 +20,10 @@ python main.py install
 ```
 The a database with all necessary tables will be created.\
 Next, You will be asked to enter your new main password.\
-This password has also been saved in the database.
+This main password has also been saved in the database.
 
 ## Usage
+* REMEMBER your main password, because without it, You won't be able to access the application and won't have access to your credentials!
 * After login, You may add a new credential on "Add new" tab.
 * Enter the title, login and password, and then click the "Add" button.
 * Your credential will be added to the database and You will be switched to the "Credentials" tab.
