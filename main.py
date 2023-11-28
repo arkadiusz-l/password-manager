@@ -1,3 +1,4 @@
+import re
 import sys
 import tkinter as tk
 from tkinter import ttk
@@ -120,6 +121,11 @@ class AddCredential:
             self.message.set("Please complete all fields")
             return
 
+        is_password_complex = self.check_password_complexity(password)
+        if not is_password_complex:
+            self.message.set("The password does not meet complexity requirements!")
+            return
+
         try:
             self.credentials_list.get_credential_from_db(title, login)
             self.message.set("The given pair of title + login already exists!")
@@ -138,6 +144,21 @@ class AddCredential:
         self.login_textbox.delete(0, tk.END)
         self.password_textbox.delete(0, tk.END)
         self.message.set("")
+
+    @staticmethod
+    def check_password_complexity(password):
+        if len(password) < 8:
+            return False
+        if not re.search(r"[A-Z]", password):
+            return False
+        if not re.search(r"[a-z]", password):
+            return False
+        if not re.search(r"\d", password):
+            return False
+        if not re.search(r"[!\"#$%&\'()*+,-./:;<=>?@\[\]^_`{|}~]", password):
+            return False
+
+        return True
 
     @staticmethod
     def generate_password(letters, digits, specials):
