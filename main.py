@@ -131,7 +131,6 @@ class AddCredential:
 
         is_password_complex = self.check_password_complexity(password)
         if not is_password_complex:
-            self.message.set("The password does not meet complexity requirements!")
             return
 
         try:
@@ -153,17 +152,21 @@ class AddCredential:
         self.password_textbox.delete(0, tk.END)
         self.message.set("")
 
-    @staticmethod
-    def check_password_complexity(password):
+    def check_password_complexity(self, password):
         if len(password) < 8:
+            self.message.set("The password must have at least 8 characters!")
             return False
         if not re.search(r"[A-Z]", password):
+            self.message.set("The password must have at least 1 uppercase letter!")
             return False
         if not re.search(r"[a-z]", password):
+            self.message.set("The password must have at least 1 lowercase letter!")
             return False
         if not re.search(r"\d", password):
+            self.message.set("The password must have at least 1 digit!")
             return False
         if not re.search(r"[!\"#$%&\'()*+,-./:;<=>?@\[\]^_`{|}~]", password):
+            self.message.set("The password must have at least 1 special character!")
             return False
 
         return True
