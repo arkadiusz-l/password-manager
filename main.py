@@ -142,14 +142,17 @@ class AddCredential:
         if not is_password_complex:
             return
 
-        self.password = self.crypto.encrypt(self.password)
-        with Session(self.db) as session:
-            credential = CredentialModel(title=self.title, login=self.login, password=self.password)
-            session.add(credential)
-            session.commit()
+        self.save_to_database(self.db, self.password)
         self.tabsystem.select(0)
         self.credentials_list.load_credentials_to_tree()
         self.clear_tab()
+
+    def save_to_database(self, db, password):
+        password = self.crypto.encrypt(password)
+        credential = CredentialModel(title=self.title, login=self.login, password=password)
+        with Session(db) as session:
+            session.add(credential)
+            session.commit()
 
     def check_empty_fields(self, title, login, password):
         if title == "" or login == "" or password == "":
