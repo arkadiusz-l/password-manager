@@ -117,16 +117,17 @@ class AddCredential:
         title = self.title_textbox.get()
         login = self.login_textbox.get()
         password = self.password_textbox.get()
-        if title == "" or login == "" or password == "":
-            self.message.set("Please complete all fields")
-            return
 
-        is_password_same_as_login = self.check_password_vs_login(password, login)
-        if is_password_same_as_login:
+        is_fields_are_empty = self.check_empty_fields()
+        if is_fields_are_empty:
             return
 
         is_password_same_as_title = self.check_password_vs_title(password, title)
         if is_password_same_as_title:
+            return
+
+        is_password_same_as_login = self.check_password_vs_login(password, login)
+        if is_password_same_as_login:
             return
 
         is_password_complex = self.check_password_complexity(password)
@@ -152,6 +153,23 @@ class AddCredential:
         self.password_textbox.delete(0, tk.END)
         self.message.set("")
 
+    def check_empty_fields(self):
+        if self.title_textbox.get() == "" or self.login_textbox.get() == "" or self.password_textbox.get() == "":
+            self.message.set("Please complete all fields")
+            return True
+
+    def check_password_vs_title(self, password, title):
+        if password == title:
+            self.message.set("The password should not be the same as title!")
+            return True
+        return False
+
+    def check_password_vs_login(self, password, login):
+        if password == login:
+            self.message.set("The password should not be the same as the login!")
+            return True
+        return False
+
     def check_password_complexity(self, password):
         if len(password) < 8:
             self.message.set("The password must have at least 8 characters!")
@@ -170,18 +188,6 @@ class AddCredential:
             return False
 
         return True
-
-    def check_password_vs_login(self, password, login):
-        if password == login:
-            self.message.set("The password should not be the same as the login!")
-            return True
-        return False
-
-    def check_password_vs_title(self, password, title):
-        if password == title:
-            self.message.set("The password should not be the same as title!")
-            return True
-        return False
 
     @staticmethod
     def generate_password(letters, digits, specials):
