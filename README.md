@@ -12,8 +12,11 @@ Your passwords are not visible from the user interface. They are stored in the d
 * One main password for all your credentials.
 * Storing your passwords encrypted.
 * Generating a random password that is difficult to crack or guess.
-* Checking if the password meets complexity requirements.
-
+* Checking password security:
+  - Checking if the password is not the same as the login.
+  - Checking if the password is not the same as the title.
+  - Checking if the password meets complexity requirements.
+  
 ## Installation
 Just clone the repo and type:
 ```
