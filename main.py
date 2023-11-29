@@ -111,7 +111,7 @@ class AddCredential:
             tab, textvariable=self.message, font=("Segoe UI", 9, "bold"),
             foreground="#f02626"
         )
-        self.message_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        self.message_label.place(relx=0.5, rely=0.45, anchor=tk.N)
 
         self.title = ""
         self.login = ""
