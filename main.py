@@ -113,66 +113,59 @@ class AddCredential:
         )
         self.message_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
+        self.title = ""
+        self.login = ""
+        self.password = ""
+
     def on_click_add_credential(self, event):
-        title = self.title_textbox.get()
-        login = self.login_textbox.get()
-        password = self.password_textbox.get()
-        if title == "" or login == "" or password == "":
-            self.message.set("Please complete all fields")
+        self.title = self.title_textbox.get()
+        self.login = self.login_textbox.get()
+        self.password = self.password_textbox.get()
+
+        is_fields_are_empty = self.check_empty_fields(self.title, self.login, self.password)
+        if is_fields_are_empty:
             return
 
-        is_password_same_as_login = self.check_password_vs_login(password, login)
-        if is_password_same_as_login:
+        is_exists = self.check_if_exists(self.title, self.login)
+        if is_exists:
             return
 
-        is_password_same_as_title = self.check_password_vs_title(password, title)
+        is_password_same_as_title = self.check_password_vs_title(self.password, self.title)
         if is_password_same_as_title:
             return
 
-        is_password_complex = self.check_password_complexity(password)
-        if not is_password_complex:
-            self.message.set("The password does not meet complexity requirements!")
+        is_password_same_as_login = self.check_password_vs_login(self.password, self.login)
+        if is_password_same_as_login:
             return
 
+        is_password_complex = self.check_password_complexity(self.password)
+        if not is_password_complex:
+            return
+
+        self.save_to_database(self.db, self.password)
+        self.tabsystem.select(0)
+        self.credentials_list.load_credentials_to_tree()
+        self.clear_tab()
+
+    def save_to_database(self, db, password):
+        password = self.crypto.encrypt(password)
+        credential = CredentialModel(title=self.title, login=self.login, password=password)
+        with Session(db) as session:
+            session.add(credential)
+            session.commit()
+
+    def check_empty_fields(self, title, login, password):
+        if title == "" or login == "" or password == "":
+            self.message.set("Please complete all fields")
+            return True
+
+    def check_if_exists(self, title, login):
         try:
             self.credentials_list.get_credential_from_db(title, login)
             self.message.set("The given pair of title + login already exists!")
-        except NoResultFound:
-            password = self.crypto.encrypt(password)
-            with Session(self.db) as session:
-                credential = CredentialModel(title=title, login=login, password=password)
-                session.add(credential)
-                session.commit()
-            self.tabsystem.select(0)
-            self.clear_tab()
-            self.credentials_list.load_credentials_to_tree()
-
-    def clear_tab(self):
-        self.title_textbox.delete(0, tk.END)
-        self.login_textbox.delete(0, tk.END)
-        self.password_textbox.delete(0, tk.END)
-        self.message.set("")
-
-    @staticmethod
-    def check_password_complexity(password):
-        if len(password) < 8:
-            return False
-        if not re.search(r"[A-Z]", password):
-            return False
-        if not re.search(r"[a-z]", password):
-            return False
-        if not re.search(r"\d", password):
-            return False
-        if not re.search(r"[!\"#$%&\'()*+,-./:;<=>?@\[\]^_`{|}~]", password):
-            return False
-
-        return True
-
-    def check_password_vs_login(self, password, login):
-        if password == login:
-            self.message.set("The password should not be the same as the login!")
             return True
-        return False
+        except NoResultFound:
+            return False
 
     def check_password_vs_title(self, password, title):
         if password == title:
@@ -180,22 +173,52 @@ class AddCredential:
             return True
         return False
 
-    @staticmethod
-    def generate_password(letters, digits, specials):
+    def check_password_vs_login(self, password, login):
+        if password == login:
+            self.message.set("The password should not be the same as the login!")
+            return True
+        return False
+
+    def check_password_complexity(self, password):
+        if len(password) < 8:
+            self.message.set("The password must have at least 8 characters!")
+            return False
+        if not re.search(r"[A-Z]", password):
+            self.message.set("The password must have at least 1 uppercase letter!")
+            return False
+        if not re.search(r"[a-z]", password):
+            self.message.set("The password must have at least 1 lowercase letter!")
+            return False
+        if not re.search(r"\d", password):
+            self.message.set("The password must have at least 1 digit!")
+            return False
+        if not re.search(r"[!\"#$%&\'()*+,-./:;<=>?@\[\]^_`{|}~]", password):
+            self.message.set("The password must have at least 1 special character!")
+            return False
+
+        return True
+
+    def generate_password(self, letters, digits, specials):
         all_letters = ascii_letters
         all_digits = "".join(map(str, range(0, 10)))
         all_special_characters = punctuation
-        password = choices(population=all_digits, k=digits)
-        password += choices(population=all_letters, k=letters)
-        password += choices(population=all_special_characters, k=specials)
-        shuffle(password)
-        password = "".join(password)
-        return password
+        self.password = choices(population=all_digits, k=digits)
+        self.password += choices(population=all_letters, k=letters)
+        self.password += choices(population=all_special_characters, k=specials)
+        shuffle(self.password)
+        self.password = "".join(self.password)
+        return self.password
 
     def on_click_generate(self, event):
-        password = self.generate_password(letters=5, digits=2, specials=1)
+        self.password = self.generate_password(letters=5, digits=2, specials=1)
         self.password_textbox.delete(0, tk.END)
-        self.password_textbox.insert(0, password)
+        self.password_textbox.insert(0, self.password)
+
+    def clear_tab(self):
+        self.title_textbox.delete(0, tk.END)
+        self.login_textbox.delete(0, tk.END)
+        self.password_textbox.delete(0, tk.END)
+        self.message.set("")
 
 
 class CredentialsList:
