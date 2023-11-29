@@ -11,14 +11,15 @@ Your passwords are not visible from the user interface. They are stored in the d
 ## Key features
 * One main password for all your credentials.
 * Storing your passwords encrypted.
-* Generating a random password that is difficult to crack or guess.
-* Checking password security:
-  - Checking if the password is not the same as the login.
-  - Checking if the password is not the same as the title.
-  - Checking if the password meets complexity requirements.
+* Generating a random, complex password that is difficult to crack or guess.
+* Prevent adding password that:
+  - is the same as the login,
+  - is same as the title,
+  - not meets complexity requirements.
+* Allowing to force adding passwords that not meet complexity requirements (if you already have such a password in some website/service/application, etc.)
   
 ## Installation
-Just clone the repo and type:
+Clone the repo or download the [latest release](https://github.com/arkadiusz-l/password-manager/releases/latest) and type:
 ```
 python main.py install
 ```
