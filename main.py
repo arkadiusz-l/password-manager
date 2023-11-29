@@ -121,6 +121,14 @@ class AddCredential:
             self.message.set("Please complete all fields")
             return
 
+        is_password_same_as_login = self.check_password_vs_login(password, login)
+        if is_password_same_as_login:
+            return
+
+        is_password_same_as_title = self.check_password_vs_title(password, title)
+        if is_password_same_as_title:
+            return
+
         is_password_complex = self.check_password_complexity(password)
         if not is_password_complex:
             self.message.set("The password does not meet complexity requirements!")
@@ -159,6 +167,18 @@ class AddCredential:
             return False
 
         return True
+
+    def check_password_vs_login(self, password, login):
+        if password == login:
+            self.message.set("The password should not be the same as the login!")
+            return True
+        return False
+
+    def check_password_vs_title(self, password, title):
+        if password == title:
+            self.message.set("The password should not be the same as title!")
+            return True
+        return False
 
     @staticmethod
     def generate_password(letters, digits, specials):
