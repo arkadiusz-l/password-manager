@@ -180,23 +180,30 @@ class AddCredential:
         return False
 
     def check_password_complexity(self, password):
+        is_complex = True
+        message = "The password must have at least:"
         if len(password) < 8:
-            self.message.set("The password must have at least 8 characters!")
-            return False
+            message += "\n8 characters!"
+            self.message.set(message)
+            is_complex = False
         if not re.search(r"[A-Z]", password):
-            self.message.set("The password must have at least 1 uppercase letter!")
-            return False
+            message += "\n1 uppercase letter!"
+            self.message.set(message)
+            is_complex = False
         if not re.search(r"[a-z]", password):
-            self.message.set("The password must have at least 1 lowercase letter!")
-            return False
+            message += "\n1 lowercase letter!"
+            self.message.set(message)
+            is_complex = False
         if not re.search(r"\d", password):
-            self.message.set("The password must have at least 1 digit!")
-            return False
+            message += "\n1 digit!"
+            self.message.set(message)
+            is_complex = False
         if not re.search(r"[!\"#$%&\'()*+,-./:;<=>?@\[\]^_`{|}~]", password):
-            self.message.set("The password must have at least 1 special character!")
-            return False
+            message += "\n1 special character!"
+            self.message.set(message)
+            is_complex = False
 
-        return True
+        return is_complex
 
     def generate_password(self, letters, digits, specials):
         all_letters = ascii_letters
