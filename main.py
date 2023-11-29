@@ -78,40 +78,44 @@ class Tab:
 
 class AddCredential:
     def __init__(self, tab, db, credentials_list, tabsystem, main_password):
+        self.tab = tab
         self.db = db
         self.credentials_list = credentials_list
         self.tabsystem = tabsystem
         self.crypto = Crypto(main_password)
 
-        title_label = ttk.Label(tab, text="Title:")
+        title_label = ttk.Label(self.tab, text="Title:")
         title_label.place(relx=0.0, rely=0.1, x=50, anchor=tk.W)
-        self.title_textbox = ttk.Entry(tab)
+        self.title_textbox = ttk.Entry(self.tab)
         self.title_textbox.place(relx=0.0, rely=0.1, x=115, anchor=tk.W, width=200)
 
-        login_label = ttk.Label(tab, text="Login:")
+        login_label = ttk.Label(self.tab, text="Login:")
         login_label.place(relx=0.0, rely=0.2, x=50, anchor=tk.W)
-        self.login_textbox = ttk.Entry(tab)
+        self.login_textbox = ttk.Entry(self.tab)
         self.login_textbox.place(relx=0.0, rely=0.2, x=115, anchor=tk.W, width=200)
 
-        password_label = ttk.Label(tab, text="Password:")
+        password_label = ttk.Label(self.tab, text="Password:")
         password_label.place(relx=0.0, rely=0.3, x=50, anchor=tk.W)
-        self.password_textbox = ttk.Entry(tab, show="*")
+        self.password_textbox = ttk.Entry(self.tab, show="*")
         self.password_textbox.place(relx=0.0, rely=0.3, x=115, anchor=tk.W, width=200)
 
-        generate_button = ttk.Button(tab, text="Generate")
+        generate_button = ttk.Button(self.tab, text="Generate")
         generate_button.place(relx=0.0, rely=0.3, x=325, anchor=tk.W)
         generate_button.bind("<Button-1>", self.on_click_generate)
 
-        add_button = ttk.Button(tab, text="Add")
+        add_button = ttk.Button(self.tab, text="Add")
         add_button.place(relx=0.5, rely=0.4, anchor=tk.CENTER)
         add_button.bind("<Button-1>", self.on_click_add_credential)
 
         self.message = tk.StringVar()
         self.message_label = ttk.Label(
-            tab, textvariable=self.message, font=("Segoe UI", 9, "bold"),
+            self.tab, textvariable=self.message, font=("Segoe UI", 9, "bold"),
             foreground="#f02626"
         )
-        self.message_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        self.message_label.place(relx=0.5, rely=0.45, anchor=tk.N)
+
+        self.force_add_boolvar = tk.BooleanVar(master=self.tab, value=False)
+        self.force_add_checkbox = ttk.Checkbutton(self.tab, text="Add it anyway", variable=self.force_add_boolvar)
 
         self.title = ""
         self.login = ""
@@ -140,7 +144,10 @@ class AddCredential:
 
         is_password_complex = self.check_password_complexity(self.password)
         if not is_password_complex:
-            return
+            self.force_add_checkbox.place(relx=0.5, rely=0.75, anchor=tk.CENTER)
+            force_add_checked = self.force_add_boolvar.get()
+            if not force_add_checked:
+                return
 
         self.save_to_database(self.db, self.password)
         self.tabsystem.select(0)
@@ -180,23 +187,30 @@ class AddCredential:
         return False
 
     def check_password_complexity(self, password):
+        is_complex = True
+        message = "The password must have at least:"
         if len(password) < 8:
-            self.message.set("The password must have at least 8 characters!")
-            return False
+            message += "\n8 characters!"
+            self.message.set(message)
+            is_complex = False
         if not re.search(r"[A-Z]", password):
-            self.message.set("The password must have at least 1 uppercase letter!")
-            return False
+            message += "\n1 uppercase letter!"
+            self.message.set(message)
+            is_complex = False
         if not re.search(r"[a-z]", password):
-            self.message.set("The password must have at least 1 lowercase letter!")
-            return False
+            message += "\n1 lowercase letter!"
+            self.message.set(message)
+            is_complex = False
         if not re.search(r"\d", password):
-            self.message.set("The password must have at least 1 digit!")
-            return False
+            message += "\n1 digit!"
+            self.message.set(message)
+            is_complex = False
         if not re.search(r"[!\"#$%&\'()*+,-./:;<=>?@\[\]^_`{|}~]", password):
-            self.message.set("The password must have at least 1 special character!")
-            return False
+            message += "\n1 special character!"
+            self.message.set(message)
+            is_complex = False
 
-        return True
+        return is_complex
 
     def generate_password(self, letters, digits, specials):
         all_letters = ascii_letters
@@ -219,6 +233,7 @@ class AddCredential:
         self.login_textbox.delete(0, tk.END)
         self.password_textbox.delete(0, tk.END)
         self.message.set("")
+        self.force_add_checkbox.place_forget()
 
 
 class CredentialsList:
