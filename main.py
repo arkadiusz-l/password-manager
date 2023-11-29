@@ -126,6 +126,10 @@ class AddCredential:
         if is_fields_are_empty:
             return
 
+        is_exists = self.check_if_exists(self.title, self.login)
+        if is_exists:
+            return
+
         is_password_same_as_title = self.check_password_vs_title(self.password, self.title)
         if is_password_same_as_title:
             return
@@ -138,29 +142,27 @@ class AddCredential:
         if not is_password_complex:
             return
 
-        try:
-            self.credentials_list.get_credential_from_db(self.title, self.login)
-            self.message.set("The given pair of title + login already exists!")
-        except NoResultFound:
-            self.password = self.crypto.encrypt(self.password)
-            with Session(self.db) as session:
-                credential = CredentialModel(title=self.title, login=self.login, password=self.password)
-                session.add(credential)
-                session.commit()
-            self.tabsystem.select(0)
-            self.credentials_list.load_credentials_to_tree()
-            self.clear_tab()
-
-    def clear_tab(self):
-        self.title_textbox.delete(0, tk.END)
-        self.login_textbox.delete(0, tk.END)
-        self.password_textbox.delete(0, tk.END)
-        self.message.set("")
+        self.password = self.crypto.encrypt(self.password)
+        with Session(self.db) as session:
+            credential = CredentialModel(title=self.title, login=self.login, password=self.password)
+            session.add(credential)
+            session.commit()
+        self.tabsystem.select(0)
+        self.credentials_list.load_credentials_to_tree()
+        self.clear_tab()
 
     def check_empty_fields(self, title, login, password):
         if title == "" or login == "" or password == "":
             self.message.set("Please complete all fields")
             return True
+
+    def check_if_exists(self, title, login):
+        try:
+            self.credentials_list.get_credential_from_db(title, login)
+            self.message.set("The given pair of title + login already exists!")
+            return True
+        except NoResultFound:
+            return False
 
     def check_password_vs_title(self, password, title):
         if password == title:
@@ -208,6 +210,12 @@ class AddCredential:
         self.password = self.generate_password(letters=5, digits=2, specials=1)
         self.password_textbox.delete(0, tk.END)
         self.password_textbox.insert(0, self.password)
+
+    def clear_tab(self):
+        self.title_textbox.delete(0, tk.END)
+        self.login_textbox.delete(0, tk.END)
+        self.password_textbox.delete(0, tk.END)
+        self.message.set("")
 
 
 class CredentialsList:
