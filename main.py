@@ -113,39 +113,43 @@ class AddCredential:
         )
         self.message_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
-    def on_click_add_credential(self, event):
-        title = self.title_textbox.get()
-        login = self.login_textbox.get()
-        password = self.password_textbox.get()
+        self.title = ""
+        self.login = ""
+        self.password = ""
 
-        is_fields_are_empty = self.check_empty_fields()
+    def on_click_add_credential(self, event):
+        self.title = self.title_textbox.get()
+        self.login = self.login_textbox.get()
+        self.password = self.password_textbox.get()
+
+        is_fields_are_empty = self.check_empty_fields(self.title, self.login, self.password)
         if is_fields_are_empty:
             return
 
-        is_password_same_as_title = self.check_password_vs_title(password, title)
+        is_password_same_as_title = self.check_password_vs_title(self.password, self.title)
         if is_password_same_as_title:
             return
 
-        is_password_same_as_login = self.check_password_vs_login(password, login)
+        is_password_same_as_login = self.check_password_vs_login(self.password, self.login)
         if is_password_same_as_login:
             return
 
-        is_password_complex = self.check_password_complexity(password)
+        is_password_complex = self.check_password_complexity(self.password)
         if not is_password_complex:
             return
 
         try:
-            self.credentials_list.get_credential_from_db(title, login)
+            self.credentials_list.get_credential_from_db(self.title, self.login)
             self.message.set("The given pair of title + login already exists!")
         except NoResultFound:
-            password = self.crypto.encrypt(password)
+            self.password = self.crypto.encrypt(self.password)
             with Session(self.db) as session:
-                credential = CredentialModel(title=title, login=login, password=password)
+                credential = CredentialModel(title=self.title, login=self.login, password=self.password)
                 session.add(credential)
                 session.commit()
             self.tabsystem.select(0)
-            self.clear_tab()
             self.credentials_list.load_credentials_to_tree()
+            self.clear_tab()
 
     def clear_tab(self):
         self.title_textbox.delete(0, tk.END)
@@ -153,8 +157,8 @@ class AddCredential:
         self.password_textbox.delete(0, tk.END)
         self.message.set("")
 
-    def check_empty_fields(self):
-        if self.title_textbox.get() == "" or self.login_textbox.get() == "" or self.password_textbox.get() == "":
+    def check_empty_fields(self, title, login, password):
+        if title == "" or login == "" or password == "":
             self.message.set("Please complete all fields")
             return True
 
@@ -189,22 +193,21 @@ class AddCredential:
 
         return True
 
-    @staticmethod
-    def generate_password(letters, digits, specials):
+    def generate_password(self, letters, digits, specials):
         all_letters = ascii_letters
         all_digits = "".join(map(str, range(0, 10)))
         all_special_characters = punctuation
-        password = choices(population=all_digits, k=digits)
-        password += choices(population=all_letters, k=letters)
-        password += choices(population=all_special_characters, k=specials)
-        shuffle(password)
-        password = "".join(password)
-        return password
+        self.password = choices(population=all_digits, k=digits)
+        self.password += choices(population=all_letters, k=letters)
+        self.password += choices(population=all_special_characters, k=specials)
+        shuffle(self.password)
+        self.password = "".join(self.password)
+        return self.password
 
     def on_click_generate(self, event):
-        password = self.generate_password(letters=5, digits=2, specials=1)
+        self.password = self.generate_password(letters=5, digits=2, specials=1)
         self.password_textbox.delete(0, tk.END)
-        self.password_textbox.insert(0, password)
+        self.password_textbox.insert(0, self.password)
 
 
 class CredentialsList:
