@@ -8,7 +8,7 @@ def create_database(engine):
         "credentials", meta,
         Column("id", Integer, primary_key=True),
         Column("title", String),
-        Column("login", String),
+        Column("username", String),
         Column("password", String),
     )
 
