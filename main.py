@@ -243,8 +243,18 @@ class CredentialsList:
         self.tabsystem = tabsystem
         self.tree = ttk.Treeview(tab, columns=("Title", "Username"), show="headings", height=16)
         self.configure_tree(tab)
+        self.context_menu = tk.Menu(tab, tearoff=0)
+        self.configure_context_menu()
+        self.tree.bind("<Button-3>", self.show_context_menu)
         self.crypto = Crypto(master_password)
         self.load_credentials_to_tree()
+
+    def configure_context_menu(self):
+        self.context_menu.add_command(label="Edit")
+        self.context_menu.add_command(label="Delete")
+
+    def show_context_menu(self, event):
+        self.context_menu.post(event.x_root, event.y_root)
 
     def get_credential_from_db(self, title, username):
         with Session(self.db) as session:
