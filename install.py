@@ -15,7 +15,7 @@ def create_database(engine):
     users = Table(
         "users", meta,
         Column("id", Integer, primary_key=True),
-        Column("main_password", String),
+        Column("master_password", String),
     )
 
     meta.create_all(engine)
