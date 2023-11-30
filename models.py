@@ -9,11 +9,11 @@ class CredentialModel(Base):
     __tablename__ = "credentials"
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(30))
-    login = Column(String(40))
+    username = Column(String(40))
     password = Column(String(20))
 
 
 class UserModel(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    main_password = Column(String(30))
+    master_password = Column(String(30))

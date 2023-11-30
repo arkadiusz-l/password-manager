@@ -17,13 +17,13 @@ class LogIn:
     def __init__(self, window, db):
         self.db = db
         self.window = window
-        self.main_password_label = ttk.Label(self.window, text="Enter main password:")
-        self.main_password_label.place(relx=0.5, rely=0.3, anchor=tk.CENTER)
-        self.main_password_textbox = ttk.Entry(self.window, show="*")
-        self.main_password_textbox.place(relx=0.5, rely=0.4, anchor=tk.CENTER)
-        self.main_password_button = ttk.Button(self.window, text="Log In")
-        self.main_password_button.bind("<Button-1>", self.on_click_log_in)
-        self.main_password_button.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        self.master_password_label = ttk.Label(self.window, text="Enter master password:")
+        self.master_password_label.place(relx=0.5, rely=0.3, anchor=tk.CENTER)
+        self.master_password_textbox = ttk.Entry(self.window, show="*")
+        self.master_password_textbox.place(relx=0.5, rely=0.4, anchor=tk.CENTER)
+        self.master_password_button = ttk.Button(self.window, text="Log In")
+        self.master_password_button.bind("<Button-1>", self.on_click_log_in)
+        self.master_password_button.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         self.message = tk.StringVar()
         self.message_label = ttk.Label(
             self.window, textvariable=self.message, font=("Segoe UI", 9, "bold"),
@@ -38,17 +38,17 @@ class LogIn:
         password_hash = sha1(password).hexdigest()
         return password_hash
 
-    def check_main_password(self, password):
+    def check_master_password(self, password):
         password_hash = self.calculate_password_hash(password)
         with Session(self.db) as session:
             user_model = session.get(UserModel, 1)
-            password_hash_from_db = user_model.main_password
+            password_hash_from_db = user_model.master_password
 
         return password_hash_from_db == password_hash
 
     def on_click_log_in(self, event):
-        self.user_password = self.main_password_textbox.get()
-        password_correct = self.check_main_password(self.user_password)
+        self.user_password = self.master_password_textbox.get()
+        password_correct = self.check_master_password(self.user_password)
         if password_correct:
             Tab().show_tabs()
 
@@ -70,29 +70,29 @@ class Tab:
 
     @staticmethod
     def clear_tab():
-        log_in.main_password_label.destroy()
-        log_in.main_password_textbox.destroy()
-        log_in.main_password_button.destroy()
+        log_in.master_password_label.destroy()
+        log_in.master_password_textbox.destroy()
+        log_in.master_password_button.destroy()
         log_in.message_label.destroy()
 
 
 class AddCredential:
-    def __init__(self, tab, db, credentials_list, tabsystem, main_password):
+    def __init__(self, tab, db, credentials_list, tabsystem, master_password):
         self.tab = tab
         self.db = db
         self.credentials_list = credentials_list
         self.tabsystem = tabsystem
-        self.crypto = Crypto(main_password)
+        self.crypto = Crypto(master_password)
 
         title_label = ttk.Label(self.tab, text="Title:")
         title_label.place(relx=0.0, rely=0.1, x=50, anchor=tk.W)
         self.title_textbox = ttk.Entry(self.tab)
         self.title_textbox.place(relx=0.0, rely=0.1, x=115, anchor=tk.W, width=200)
 
-        login_label = ttk.Label(self.tab, text="Login:")
-        login_label.place(relx=0.0, rely=0.2, x=50, anchor=tk.W)
-        self.login_textbox = ttk.Entry(self.tab)
-        self.login_textbox.place(relx=0.0, rely=0.2, x=115, anchor=tk.W, width=200)
+        username_label = ttk.Label(self.tab, text="Username:")
+        username_label.place(relx=0.0, rely=0.2, x=50, anchor=tk.W)
+        self.username_textbox = ttk.Entry(self.tab)
+        self.username_textbox.place(relx=0.0, rely=0.2, x=115, anchor=tk.W, width=200)
 
         password_label = ttk.Label(self.tab, text="Password:")
         password_label.place(relx=0.0, rely=0.3, x=50, anchor=tk.W)
@@ -118,19 +118,19 @@ class AddCredential:
         self.force_add_checkbox = ttk.Checkbutton(self.tab, text="Add it anyway", variable=self.force_add_boolvar)
 
         self.title = ""
-        self.login = ""
+        self.username = ""
         self.password = ""
 
     def on_click_add_credential(self, event):
         self.title = self.title_textbox.get()
-        self.login = self.login_textbox.get()
+        self.username = self.username_textbox.get()
         self.password = self.password_textbox.get()
 
-        is_fields_are_empty = self.check_empty_fields(self.title, self.login, self.password)
+        is_fields_are_empty = self.check_empty_fields(self.title, self.username, self.password)
         if is_fields_are_empty:
             return
 
-        is_exists = self.check_if_exists(self.title, self.login)
+        is_exists = self.check_if_exists(self.title, self.username)
         if is_exists:
             return
 
@@ -138,8 +138,8 @@ class AddCredential:
         if is_password_same_as_title:
             return
 
-        is_password_same_as_login = self.check_password_vs_login(self.password, self.login)
-        if is_password_same_as_login:
+        is_password_same_as_username = self.check_password_vs_username(self.password, self.username)
+        if is_password_same_as_username:
             return
 
         is_password_complex = self.check_password_complexity(self.password)
@@ -156,20 +156,20 @@ class AddCredential:
 
     def save_to_database(self, db, password):
         password = self.crypto.encrypt(password)
-        credential = CredentialModel(title=self.title, login=self.login, password=password)
+        credential = CredentialModel(title=self.title, username=self.username, password=password)
         with Session(db) as session:
             session.add(credential)
             session.commit()
 
-    def check_empty_fields(self, title, login, password):
-        if title == "" or login == "" or password == "":
+    def check_empty_fields(self, title, username, password):
+        if title == "" or username == "" or password == "":
             self.message.set("Please complete all fields")
             return True
 
-    def check_if_exists(self, title, login):
+    def check_if_exists(self, title, username):
         try:
-            self.credentials_list.get_credential_from_db(title, login)
-            self.message.set("The given pair of title + login already exists!")
+            self.credentials_list.get_credential_from_db(title, username)
+            self.message.set("The given pair of title + username already exists!")
             return True
         except NoResultFound:
             return False
@@ -180,9 +180,9 @@ class AddCredential:
             return True
         return False
 
-    def check_password_vs_login(self, password, login):
-        if password == login:
-            self.message.set("The password should not be the same as the login!")
+    def check_password_vs_username(self, password, username):
+        if password == username:
+            self.message.set("The password should not be the same as the username!")
             return True
         return False
 
@@ -230,35 +230,35 @@ class AddCredential:
 
     def clear_tab(self):
         self.title_textbox.delete(0, tk.END)
-        self.login_textbox.delete(0, tk.END)
+        self.username_textbox.delete(0, tk.END)
         self.password_textbox.delete(0, tk.END)
         self.message.set("")
         self.force_add_checkbox.place_forget()
 
 
 class CredentialsList:
-    def __init__(self, tab, root_window, db, main_password, tabsystem):
+    def __init__(self, tab, root_window, db, master_password, tabsystem):
         self.root_window = root_window
         self.db = db
         self.tabsystem = tabsystem
-        self.tree = ttk.Treeview(tab, columns=("Title", "Login"), show="headings", height=16)
+        self.tree = ttk.Treeview(tab, columns=("Title", "Username"), show="headings", height=16)
         self.configure_tree(tab)
-        self.crypto = Crypto(main_password)
+        self.crypto = Crypto(master_password)
         self.load_credentials_to_tree()
 
-    def get_credential_from_db(self, title, login):
+    def get_credential_from_db(self, title, username):
         with Session(self.db) as session:
             return session.query(CredentialModel).filter(
                 CredentialModel.title == title,
-                CredentialModel.login == login,
+                CredentialModel.username == username,
             ).one()
 
     def click_on_selected(self, event):
         item = self.tree.selection()[0]
         selection = self.tree.item(item, "values")
         title = selection[0]
-        login = selection[1]
-        credential = self.get_credential_from_db(title, login)
+        username = selection[1]
+        credential = self.get_credential_from_db(title, username)
         decrypted = self.crypto.decrypt(credential.password)
 
         self.root_window.clipboard_clear()
@@ -269,7 +269,7 @@ class CredentialsList:
         with Session(self.db) as session:
             credentials = session.query(CredentialModel).all()
             for credential in credentials:
-                self.tree.insert("", "end", values=(credential.title, credential.login))
+                self.tree.insert("", "end", values=(credential.title, credential.username))
 
     def configure_tree(self, tab):
         scrollbar = ttk.Scrollbar(tab, orient="vertical", command=self.tree.yview)
@@ -278,7 +278,7 @@ class CredentialsList:
         self.tree.column("#1", anchor=tk.CENTER, stretch=tk.YES, width=225)
         self.tree.heading("#1", text="Title")
         self.tree.column("#2", anchor=tk.CENTER, stretch=tk.YES, width=202)
-        self.tree.heading("#2", text="Login")
+        self.tree.heading("#2", text="Username")
         self.tree.bind("<<TreeviewSelect>>", self.click_on_selected)
         self.tree.pack()
 
@@ -287,14 +287,14 @@ if __name__ == '__main__':
     def install():
         if len(sys.argv) > 1 and sys.argv[1] == "install":
             create_database(db_engine)
-            main_password = input("Enter main password:\n")
-            main_password_hash = LogIn.calculate_password_hash(main_password)
+            master_password = input("Enter master password:\n")
+            master_password_hash = LogIn.calculate_password_hash(master_password)
 
             with Session(db_engine) as session:
-                user = UserModel(id=1, main_password=main_password_hash)
+                user = UserModel(id=1, master_password=master_password_hash)
                 session.add(user)
                 session.commit()
-            print("Main password saved successfully.")
+            print("Master password saved successfully.")
             quit()
 
 

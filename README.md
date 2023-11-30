@@ -5,11 +5,11 @@ It uses [Tkinter](https://docs.python.org/3/library/tkinter.html) for GUI, [SQLi
 ## Description
 This application stores your credentials in the form of a title, login, and password.\
 These can be credentials for other applications, games, websites, social media, etc.\
-The application is secured by main password You create during install.\
+The application is secured by master password You create during install.\
 Your passwords are not visible from the user interface. They are stored in the database as encrypted!
 
 ## Key features
-* One main password for all your credentials.
+* One master password for all your credentials.
 * Storing your passwords encrypted.
 * Generating a random, complex password that is difficult to crack or guess.
 * Prevent adding password that:
@@ -23,12 +23,12 @@ Clone the repo or download the [latest release](https://github.com/arkadiusz-l/p
 ```
 python main.py install
 ```
-The a database with all necessary tables will be created.\
-Next, You will be asked to enter your new main password.\
-This main password has also been saved in the database.
+The database with all necessary tables will be created.\
+Next, You will be asked to enter your new master password.\
+This master password has also been saved in the database.
 
 ## Usage
-* REMEMBER your main password, because without it, You won't be able to access the application and won't have access to your credentials!
+* REMEMBER your master password, because without it, You won't be able to access the application and won't have access to your credentials!
 * After login, You may add a new credential on "Add new" tab.
 * Enter the title, login and password, and then click the "Add" button.
 * Your credential will be added to the database and You will be switched to the "Credentials" tab.
