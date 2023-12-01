@@ -31,6 +31,7 @@ class LogIn:
         )
         self.message_label.place(relx=0.5, rely=0.6, anchor=tk.CENTER)
         self.user_password = ""
+        self.tab = None
 
     @staticmethod
     def calculate_password_hash(password):
@@ -50,22 +51,24 @@ class LogIn:
         self.user_password = self.master_password_textbox.get()
         password_correct = self.check_master_password(self.user_password)
         if password_correct:
-            Tab().show_tabs()
+            self.tab = Tab()
+            self.tab.show_tabs()
 
         self.message.set("Password incorrect!")
 
 
 class Tab:
+    def __init__(self):
+        self.tabsystem = ttk.Notebook(root)
+        self.credentials_tab = ttk.Frame(self.tabsystem)
+        self.credentials_list = CredentialsList(self.credentials_tab, root, db_engine, log_in.user_password, self.tabsystem)
+        self.add_credentials_tab = ttk.Frame(self.tabsystem)
+        self.add_credential = AddCredential(self.add_credentials_tab, db_engine, self.credentials_list, self.tabsystem, log_in.user_password)
 
     def show_tabs(self):
-        tabsystem = ttk.Notebook(root)
-        credentials_tab = ttk.Frame(tabsystem)
-        add_credentials_tab = ttk.Frame(tabsystem)
-        tabsystem.add(credentials_tab, text="Credentials")
-        tabsystem.add(add_credentials_tab, text="Add new")
-        tabsystem.pack()
-        credentials_list = CredentialsList(credentials_tab, root, db_engine, log_in.user_password, tabsystem)
-        AddCredential(add_credentials_tab, db_engine, credentials_list, tabsystem, log_in.user_password)
+        self.tabsystem.add(self.credentials_tab, text="Credentials")
+        self.tabsystem.add(self.add_credentials_tab, text="Add new")
+        self.tabsystem.pack()
         self.clear_tab()
 
     @staticmethod
