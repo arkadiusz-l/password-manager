@@ -68,7 +68,7 @@ class Tab:
 
     def show_tabs(self):
         self.tabsystem.add(self.credentials_tab, text="Credentials")
-        self.tabsystem.add(self.add_credential_tab, text="Add new")
+        self.tabsystem.add(self.add_credential_tab, text="Add")
         self.tabsystem.pack()
         self.clear_tab()
 
