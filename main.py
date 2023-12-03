@@ -70,10 +70,10 @@ class Tab:
         self.tabsystem.add(self.credentials_tab, text="Credentials")
         self.tabsystem.add(self.add_credential_tab, text="Add")
         self.tabsystem.pack()
-        self.clear_tab()
+        self.destroy_login_widgets()
 
     @staticmethod
-    def clear_tab():
+    def destroy_login_widgets():
         log_in.master_password_label.destroy()
         log_in.master_password_textbox.destroy()
         log_in.master_password_button.destroy()
