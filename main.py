@@ -279,6 +279,7 @@ class CredentialsList:
         self.tree.bind("<Button-3>", self.show_context_menu)
         self.crypto = Crypto(master_password)
         self.load_credentials_to_tree()
+        self.selected = None
 
     def configure_context_menu(self):
         self.context_menu.add_command(label="Edit")
@@ -287,18 +288,14 @@ class CredentialsList:
     def show_context_menu(self, event):
         self.context_menu.post(event.x_root, event.y_root)
         try:
-            item = self.tree.selection()[0]
-            self.context_menu.entryconfigure("Edit", command=lambda: self.edit_credential(item))
-            self.context_menu.entryconfigure("Delete", command=lambda: self.delete_credential(item))
+            self.context_menu.entryconfigure("Edit", command=lambda: self.edit_credential(self.selected))
+            self.context_menu.entryconfigure("Delete", command=lambda: self.delete_credential(self.selected))
         except IndexError:
             return
 
     def edit_credential(self, item):
         log_in.tab.add_credential.edit = True
-        item = self.tree.item(item, "values")
-        title = item[0]
-        username = item[1]
-        credential = self.get_credential_from_db(title, username)
+        credential = self.get_selected_credential()
         decrypted_password = self.crypto.decrypt(credential.password)
         log_in.tab.add_credential.clear_tab()
         log_in.tab.add_credential.title_textbox.insert(0, credential.title)
@@ -308,12 +305,9 @@ class CredentialsList:
 
     def delete_credential(self, item):
         try:
-            selected = self.tree.item(item, "values")
+            credential = self.get_selected_credential()
         except TclError:
             return
-        title = selected[0]
-        username = selected[1]
-        credential = self.get_credential_from_db(title, username)
         with Session(self.db) as session:
             session.delete(credential)
             session.commit()
@@ -326,14 +320,17 @@ class CredentialsList:
                 CredentialModel.username == username,
             ).one()
 
-    def click_on_selected(self, event):
-        item = self.tree.selection()[0]
-        selection = self.tree.item(item, "values")
-        title = selection[0]
-        username = selection[1]
+    def get_selected_credential(self):
+        self.selected = self.tree.selection()[0]
+        selected = self.tree.item(self.selected, "values")
+        title = selected[0]
+        username = selected[1]
         credential = self.get_credential_from_db(title, username)
-        decrypted = self.crypto.decrypt(credential.password)
+        return credential
 
+    def click_on_selected(self, event):
+        credential = self.get_selected_credential()
+        decrypted = self.crypto.decrypt(credential.password)
         self.root_window.clipboard_clear()
         self.root_window.clipboard_append(decrypted)
 
