@@ -34,6 +34,7 @@ This master password has also been saved in the database.
 * Your credential will be added to the database and You will be switched to the "Credentials" tab.
 * If You want to use the saved password, click on the row with the corresponding credentials on the "Credentials" tab, and the password will be loaded from the database, decrypted, and copied to the clipboard for immediate use.
 * Your password is now in the clipboard, ready to be pasted in the appropriate place!
+* To edit or delete a credential, left-click on it to select, then right-click and choose the appropriate option from the menu.
 
 ## Clarification
 During development, I decided to change the commit messages to be consistent with Conventional Commits and Semantic Commits Messages.
