@@ -63,12 +63,12 @@ class Tab:
         self.tabsystem = ttk.Notebook(root)
         self.credentials_tab = ttk.Frame(self.tabsystem)
         self.credentials_list = CredentialsList(self.credentials_tab, root, db_engine, log_in.user_password, self.tabsystem)
-        self.add_credentials_tab = ttk.Frame(self.tabsystem)
-        self.add_credential = AddCredential(self.add_credentials_tab, db_engine, self.credentials_list, self.tabsystem, log_in.user_password)
+        self.add_credential_tab = ttk.Frame(self.tabsystem)
+        self.add_credential = AddCredential(self.add_credential_tab, db_engine, self.credentials_list, self.tabsystem, log_in.user_password)
 
     def show_tabs(self):
         self.tabsystem.add(self.credentials_tab, text="Credentials")
-        self.tabsystem.add(self.add_credentials_tab, text="Add new")
+        self.tabsystem.add(self.add_credential_tab, text="Add new")
         self.tabsystem.pack()
         self.clear_tab()
 
