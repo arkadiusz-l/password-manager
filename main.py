@@ -123,6 +123,7 @@ class AddCredential:
         self.title = ""
         self.username = ""
         self.password = ""
+        self.edit = False
 
     def on_click_add_credential(self, event):
         self.title = self.title_textbox.get()
@@ -133,9 +134,10 @@ class AddCredential:
         if is_fields_are_empty:
             return
 
-        is_exists = self.check_if_exists(self.title, self.username)
-        if is_exists:
-            return
+        if not self.edit:
+            is_exists = self.check_if_exists(self.title, self.username)
+            if is_exists:
+                return
 
         is_password_same_as_title = self.check_password_vs_title(self.password, self.title)
         if is_password_same_as_title:
@@ -152,10 +154,35 @@ class AddCredential:
             if not force_add_checked:
                 return
 
-        self.save_to_database(self.db, self.password)
+        if self.edit:
+            selected = self.credentials_list.tree.selection()[0]
+            self.edit_in_database(self.db, selected, self.title, self.username, self.password)
+        elif not self.edit:
+            self.save_to_database(self.db, self.password)
+
         self.tabsystem.select(0)
         self.credentials_list.load_credentials_to_tree()
         self.clear_tab()
+        self.edit = False
+
+    def edit_in_database(self, db, item, new_title, new_username, new_password):
+        selected = self.credentials_list.tree.item(item, "values")
+        title = selected[0]
+        username = selected[1]
+        with Session(db) as session:
+            credential = session.query(CredentialModel).filter(
+                CredentialModel.title == title,
+                CredentialModel.username == username,
+                ).one()
+            decrypted_password = self.crypto.decrypt(credential.password)
+            if credential.title != new_title:
+                credential.title = new_title
+            if credential.username != new_username:
+                credential.username = new_username
+            if decrypted_password != new_password:
+                new_password = self.crypto.encrypt(new_password)
+                credential.password = new_password
+            session.commit()
 
     def save_to_database(self, db, password):
         password = self.crypto.encrypt(password)
@@ -258,6 +285,24 @@ class CredentialsList:
 
     def show_context_menu(self, event):
         self.context_menu.post(event.x_root, event.y_root)
+        try:
+            item = self.tree.selection()[0]
+            self.context_menu.entryconfigure("Edit", command=lambda: self.edit_credential(item))
+        except IndexError:
+            return
+
+    def edit_credential(self, item):
+        log_in.tab.add_credential.edit = True
+        item = self.tree.item(item, "values")
+        title = item[0]
+        username = item[1]
+        credential = self.get_credential_from_db(title, username)
+        decrypted_password = self.crypto.decrypt(credential.password)
+        log_in.tab.add_credential.clear_tab()
+        log_in.tab.add_credential.title_textbox.insert(0, credential.title)
+        log_in.tab.add_credential.username_textbox.insert(0, credential.username)
+        log_in.tab.add_credential.password_textbox.insert(0, decrypted_password)
+        self.tabsystem.select(1)
 
     def get_credential_from_db(self, title, username):
         with Session(self.db) as session:
