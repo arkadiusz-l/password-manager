@@ -2,6 +2,7 @@ import re
 import sys
 import tkinter as tk
 from tkinter import ttk
+from _tkinter import TclError
 from hashlib import sha1
 from random import choices, shuffle
 from string import ascii_letters, punctuation
@@ -288,6 +289,7 @@ class CredentialsList:
         try:
             item = self.tree.selection()[0]
             self.context_menu.entryconfigure("Edit", command=lambda: self.edit_credential(item))
+            self.context_menu.entryconfigure("Delete", command=lambda: self.delete_credential(item))
         except IndexError:
             return
 
@@ -303,6 +305,19 @@ class CredentialsList:
         log_in.tab.add_credential.username_textbox.insert(0, credential.username)
         log_in.tab.add_credential.password_textbox.insert(0, decrypted_password)
         self.tabsystem.select(1)
+
+    def delete_credential(self, item):
+        try:
+            selected = self.tree.item(item, "values")
+        except TclError:
+            return
+        title = selected[0]
+        username = selected[1]
+        credential = self.get_credential_from_db(title, username)
+        with Session(self.db) as session:
+            session.delete(credential)
+            session.commit()
+        self.load_credentials_to_tree()
 
     def get_credential_from_db(self, title, username):
         with Session(self.db) as session:
