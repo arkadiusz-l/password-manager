@@ -2,6 +2,7 @@ import re
 import sys
 import tkinter as tk
 from tkinter import ttk
+from _tkinter import TclError
 from hashlib import sha1
 from random import choices, shuffle
 from string import ascii_letters, punctuation
@@ -31,6 +32,7 @@ class LogIn:
         )
         self.message_label.place(relx=0.5, rely=0.6, anchor=tk.CENTER)
         self.user_password = ""
+        self.tab = None
 
     @staticmethod
     def calculate_password_hash(password):
@@ -50,22 +52,24 @@ class LogIn:
         self.user_password = self.master_password_textbox.get()
         password_correct = self.check_master_password(self.user_password)
         if password_correct:
-            Tab().show_tabs()
+            self.tab = Tab()
+            self.tab.show_tabs()
 
         self.message.set("Password incorrect!")
 
 
 class Tab:
+    def __init__(self):
+        self.tabsystem = ttk.Notebook(root)
+        self.credentials_tab = ttk.Frame(self.tabsystem)
+        self.credentials_list = CredentialsList(self.credentials_tab, root, db_engine, log_in.user_password, self.tabsystem)
+        self.add_credentials_tab = ttk.Frame(self.tabsystem)
+        self.add_credential = AddCredential(self.add_credentials_tab, db_engine, self.credentials_list, self.tabsystem, log_in.user_password)
 
     def show_tabs(self):
-        tabsystem = ttk.Notebook(root)
-        credentials_tab = ttk.Frame(tabsystem)
-        add_credentials_tab = ttk.Frame(tabsystem)
-        tabsystem.add(credentials_tab, text="Credentials")
-        tabsystem.add(add_credentials_tab, text="Add new")
-        tabsystem.pack()
-        credentials_list = CredentialsList(credentials_tab, root, db_engine, log_in.user_password, tabsystem)
-        AddCredential(add_credentials_tab, db_engine, credentials_list, tabsystem, log_in.user_password)
+        self.tabsystem.add(self.credentials_tab, text="Credentials")
+        self.tabsystem.add(self.add_credentials_tab, text="Add new")
+        self.tabsystem.pack()
         self.clear_tab()
 
     @staticmethod
@@ -120,6 +124,7 @@ class AddCredential:
         self.title = ""
         self.username = ""
         self.password = ""
+        self.edit = False
 
     def on_click_add_credential(self, event):
         self.title = self.title_textbox.get()
@@ -130,9 +135,10 @@ class AddCredential:
         if is_fields_are_empty:
             return
 
-        is_exists = self.check_if_exists(self.title, self.username)
-        if is_exists:
-            return
+        if not self.edit:
+            is_exists = self.check_if_exists(self.title, self.username)
+            if is_exists:
+                return
 
         is_password_same_as_title = self.check_password_vs_title(self.password, self.title)
         if is_password_same_as_title:
@@ -149,10 +155,35 @@ class AddCredential:
             if not force_add_checked:
                 return
 
-        self.save_to_database(self.db, self.password)
+        if self.edit:
+            selected = self.credentials_list.tree.selection()[0]
+            self.edit_in_database(self.db, selected, self.title, self.username, self.password)
+        elif not self.edit:
+            self.save_to_database(self.db, self.password)
+
         self.tabsystem.select(0)
         self.credentials_list.load_credentials_to_tree()
         self.clear_tab()
+        self.edit = False
+
+    def edit_in_database(self, db, item, new_title, new_username, new_password):
+        selected = self.credentials_list.tree.item(item, "values")
+        title = selected[0]
+        username = selected[1]
+        with Session(db) as session:
+            credential = session.query(CredentialModel).filter(
+                CredentialModel.title == title,
+                CredentialModel.username == username,
+                ).one()
+            decrypted_password = self.crypto.decrypt(credential.password)
+            if credential.title != new_title:
+                credential.title = new_title
+            if credential.username != new_username:
+                credential.username = new_username
+            if decrypted_password != new_password:
+                new_password = self.crypto.encrypt(new_password)
+                credential.password = new_password
+            session.commit()
 
     def save_to_database(self, db, password):
         password = self.crypto.encrypt(password)
@@ -243,7 +274,49 @@ class CredentialsList:
         self.tabsystem = tabsystem
         self.tree = ttk.Treeview(tab, columns=("Title", "Username"), show="headings", height=16)
         self.configure_tree(tab)
+        self.context_menu = tk.Menu(tab, tearoff=0)
+        self.configure_context_menu()
+        self.tree.bind("<Button-3>", self.show_context_menu)
         self.crypto = Crypto(master_password)
+        self.load_credentials_to_tree()
+
+    def configure_context_menu(self):
+        self.context_menu.add_command(label="Edit")
+        self.context_menu.add_command(label="Delete")
+
+    def show_context_menu(self, event):
+        self.context_menu.post(event.x_root, event.y_root)
+        try:
+            item = self.tree.selection()[0]
+            self.context_menu.entryconfigure("Edit", command=lambda: self.edit_credential(item))
+            self.context_menu.entryconfigure("Delete", command=lambda: self.delete_credential(item))
+        except IndexError:
+            return
+
+    def edit_credential(self, item):
+        log_in.tab.add_credential.edit = True
+        item = self.tree.item(item, "values")
+        title = item[0]
+        username = item[1]
+        credential = self.get_credential_from_db(title, username)
+        decrypted_password = self.crypto.decrypt(credential.password)
+        log_in.tab.add_credential.clear_tab()
+        log_in.tab.add_credential.title_textbox.insert(0, credential.title)
+        log_in.tab.add_credential.username_textbox.insert(0, credential.username)
+        log_in.tab.add_credential.password_textbox.insert(0, decrypted_password)
+        self.tabsystem.select(1)
+
+    def delete_credential(self, item):
+        try:
+            selected = self.tree.item(item, "values")
+        except TclError:
+            return
+        title = selected[0]
+        username = selected[1]
+        credential = self.get_credential_from_db(title, username)
+        with Session(self.db) as session:
+            session.delete(credential)
+            session.commit()
         self.load_credentials_to_tree()
 
     def get_credential_from_db(self, title, username):
