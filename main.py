@@ -287,15 +287,15 @@ class CredentialsList:
 
     def show_context_menu(self, event):
         self.context_menu.post(event.x_root, event.y_root)
-        try:
-            self.context_menu.entryconfigure("Edit", command=lambda: self.edit_credential(self.selected))
-            self.context_menu.entryconfigure("Delete", command=lambda: self.delete_credential(self.selected))
-        except IndexError:
-            return
+        self.context_menu.entryconfigure("Edit", command=lambda: self.edit_credential(self.selected))
+        self.context_menu.entryconfigure("Delete", command=lambda: self.delete_credential(self.selected))
 
     def edit_credential(self, item):
         log_in.tab.add_credential.edit = True
-        credential = self.get_selected_credential()
+        try:
+            credential = self.get_selected_credential()
+        except IndexError:
+            return
         decrypted_password = self.crypto.decrypt(credential.password)
         log_in.tab.add_credential.clear_tab()
         log_in.tab.add_credential.title_textbox.insert(0, credential.title)
@@ -306,7 +306,7 @@ class CredentialsList:
     def delete_credential(self, item):
         try:
             credential = self.get_selected_credential()
-        except TclError:
+        except (IndexError, TclError):
             return
         with Session(self.db) as session:
             session.delete(credential)
@@ -318,7 +318,7 @@ class CredentialsList:
             return session.query(CredentialModel).filter(
                 CredentialModel.title == title,
                 CredentialModel.username == username,
-            ).one()
+                ).one()
 
     def get_selected_credential(self):
         self.selected = self.tree.selection()[0]
