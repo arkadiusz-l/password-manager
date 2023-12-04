@@ -6,7 +6,7 @@ It uses [Tkinter](https://docs.python.org/3/library/tkinter.html) for GUI, [SQLi
 This application stores your credentials in the form of a title, login, and password.\
 These can be credentials for other applications, games, websites, social media, etc.\
 The application is secured by master password You create during install.\
-Your passwords are not visible from the user interface. They are stored in the database as encrypted!
+Your passwords are not visible in the user interface. They are stored in the database as encrypted!
 
 ## Key features
 * One master password for all your credentials.
@@ -17,7 +17,19 @@ Your passwords are not visible from the user interface. They are stored in the d
   - is same as the title,
   - not meets complexity requirements.
 * Allowing to force adding passwords that not meet complexity requirements (if you already have such a password in some website/service/application, etc.)
-  
+
+## Screenshots
+### Windows
+![win1c](https://github.com/arkadiusz-l/password-manager/assets/104087320/f650c2ff-eafa-41b1-92fd-b5c8a2874adb)
+![win2c](https://github.com/arkadiusz-l/password-manager/assets/104087320/4dc3b44d-4de3-400c-bb73-c495ffd4648f)
+![win3c](https://github.com/arkadiusz-l/password-manager/assets/104087320/7b0c283b-43d5-40aa-a2a1-05e8f8af4963)
+![win4c](https://github.com/arkadiusz-l/password-manager/assets/104087320/352e629b-d0d5-411c-8386-dff5e030792a)
+### Linux
+![linux1c](https://github.com/arkadiusz-l/password-manager/assets/104087320/a63ab1bd-022d-43d7-8a04-4939897f7535)
+![linux2c](https://github.com/arkadiusz-l/password-manager/assets/104087320/4741640e-4aa9-47d3-8310-12b5ba04f86d)
+![linux3c](https://github.com/arkadiusz-l/password-manager/assets/104087320/94984e12-0599-4e37-9c32-f2c21afea313)
+![linux4c](https://github.com/arkadiusz-l/password-manager/assets/104087320/130e6119-1057-41ba-9711-42b900e7a9ff)
+
 ## Installation
 Clone the repo or download the [latest release](https://github.com/arkadiusz-l/password-manager/releases/latest) and type:
 ```
