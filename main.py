@@ -89,17 +89,17 @@ class AddCredential:
         self.crypto = Crypto(master_password)
 
         title_label = ttk.Label(self.tab, text="Title:")
-        title_label.place(relx=0.0, rely=0.1, x=50, anchor=tk.W)
+        title_label.place(relx=0.0, rely=0.1, x=100, anchor=tk.E)
         self.title_textbox = ttk.Entry(self.tab)
         self.title_textbox.place(relx=0.0, rely=0.1, x=115, anchor=tk.W, width=200)
 
         username_label = ttk.Label(self.tab, text="Username:")
-        username_label.place(relx=0.0, rely=0.2, x=50, anchor=tk.W)
+        username_label.place(relx=0.0, rely=0.2, x=100, anchor=tk.E)
         self.username_textbox = ttk.Entry(self.tab)
         self.username_textbox.place(relx=0.0, rely=0.2, x=115, anchor=tk.W, width=200)
 
         password_label = ttk.Label(self.tab, text="Password:")
-        password_label.place(relx=0.0, rely=0.3, x=50, anchor=tk.W)
+        password_label.place(relx=0.0, rely=0.3, x=100, anchor=tk.E)
         self.password_textbox = ttk.Entry(self.tab, show="*")
         self.password_textbox.place(relx=0.0, rely=0.3, x=115, anchor=tk.W, width=200)
 
