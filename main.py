@@ -107,6 +107,9 @@ class AddCredential:
         generate_button.place(relx=0.0, rely=0.3, x=325, anchor=tk.W)
         generate_button.bind("<Button-1>", self.on_click_generate)
 
+        clear_button = ttk.Button(self.tab, text="Clear", width=6, command=self.clear_tab)
+        clear_button.place(relx=0.0, rely=0.4, x=100, anchor=tk.E)
+
         add_button = ttk.Button(self.tab, text="Add")
         add_button.place(relx=0.5, rely=0.4, anchor=tk.CENTER)
         add_button.bind("<Button-1>", self.on_click_add_credential)
@@ -265,6 +268,7 @@ class AddCredential:
         self.password_textbox.delete(0, tk.END)
         self.message.set("")
         self.force_add_checkbox.place_forget()
+        self.edit = False
 
 
 class CredentialsList:
@@ -291,7 +295,6 @@ class CredentialsList:
         self.context_menu.entryconfigure("Delete", command=lambda: self.delete_credential(self.selected))
 
     def edit_credential(self, item):
-        log_in.tab.add_credential.edit = True
         try:
             credential = self.get_selected_credential()
         except IndexError:
@@ -301,6 +304,7 @@ class CredentialsList:
         log_in.tab.add_credential.title_textbox.insert(0, credential.title)
         log_in.tab.add_credential.username_textbox.insert(0, credential.username)
         log_in.tab.add_credential.password_textbox.insert(0, decrypted_password)
+        log_in.tab.add_credential.edit = True
         self.tabsystem.select(1)
 
     def delete_credential(self, item):
