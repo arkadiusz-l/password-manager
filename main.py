@@ -15,7 +15,14 @@ from crypto import Crypto
 
 
 class LogIn:
+    """Represents login window"""
+
     def __init__(self, window, db):
+        """
+        Args:
+            window: window to place widgets
+            db: database
+        """
         self.db = db
         self.window = window
         self.master_password_label = ttk.Label(self.window, text="Enter master password:")
@@ -36,11 +43,29 @@ class LogIn:
 
     @staticmethod
     def calculate_password_hash(password):
+        """
+        Calculates a given master password hash for later login.
+
+        Args:
+            password: the password, whose hash will be calculated
+
+        Returns:
+            password hash: calculated master password hash
+        """
         password = password.encode("utf-8")
         password_hash = sha1(password).hexdigest()
         return password_hash
 
     def check_master_password(self, password):
+        """
+        Checks if the given password hash matches the stored master password hash.
+
+        Args:
+            password: the password to be checked
+
+        Returns:
+            bool: True if the given password hash matches the stored master password hash, False otherwise
+        """
         password_hash = self.calculate_password_hash(password)
         with Session(self.db) as session:
             user_model = session.get(UserModel, 1)
@@ -49,6 +74,15 @@ class LogIn:
         return password_hash_from_db == password_hash
 
     def on_click_log_in(self, event):
+        """
+        Handles the click event of the `Log In` button
+
+        Args:
+            event: click event
+
+        Side Effects:
+            Sets the message attribute to indicate password incorrect
+        """
         self.user_password = self.master_password_textbox.get()
         password_correct = self.check_master_password(self.user_password)
         if password_correct:
@@ -59,6 +93,8 @@ class LogIn:
 
 
 class Tab:
+    """Represents view of the tabs after user login"""
+
     def __init__(self):
         self.tabsystem = ttk.Notebook(root)
         self.credentials_tab = ttk.Frame(self.tabsystem)
@@ -67,6 +103,9 @@ class Tab:
         self.add_credential = AddCredential(self.add_credential_tab, db_engine, self.credentials_list, self.tabsystem, log_in.user_password)
 
     def show_tabs(self):
+        """
+        Shows tabs after user login
+        """
         self.tabsystem.add(self.credentials_tab, text="Credentials")
         self.tabsystem.add(self.add_credential_tab, text="Add")
         self.tabsystem.pack()
@@ -74,6 +113,9 @@ class Tab:
 
     @staticmethod
     def destroy_login_widgets():
+        """
+        Destroys login widgets after user login
+        """
         log_in.master_password_label.destroy()
         log_in.master_password_textbox.destroy()
         log_in.master_password_button.destroy()
@@ -81,7 +123,17 @@ class Tab:
 
 
 class AddCredential:
+    """Represents a form for credential adding"""
+
     def __init__(self, tab, db, credentials_list, tabsystem, master_password):
+        """
+        Args:
+            tab: tab to place widgets
+            db: database
+            credentials_list: tab with list of credentials
+            tabsystem: widget manages a collection of tabs
+            master_password: user master password
+        """
         self.tab = tab
         self.db = db
         self.credentials_list = credentials_list
@@ -130,6 +182,13 @@ class AddCredential:
         self.edit = False
 
     def on_click_add_credential(self, event):
+        """
+        Handles the click event of the `Add` button.
+        Saves new or edited credentials to the database.
+
+        Args:
+            event: click event
+        """
         self.title = self.title_textbox.get()
         self.username = self.username_textbox.get()
         self.password = self.password_textbox.get()
@@ -170,6 +229,16 @@ class AddCredential:
         self.edit = False
 
     def edit_in_database(self, db, item, new_title, new_username, new_password):
+        """
+        Saves edited credential to the database.
+
+        Args:
+            db: database
+            item: selected credential
+            new_title: new title of credential to save
+            new_username: new username to save
+            new_password: new password to save
+        """
         selected = self.credentials_list.tree.item(item, "values")
         title = selected[0]
         username = selected[1]
@@ -189,6 +258,13 @@ class AddCredential:
             session.commit()
 
     def save_to_database(self, db, password):
+        """
+        Saves new credential to the database.
+
+        Args:
+            db: database
+            password: password to save
+        """
         password = self.crypto.encrypt(password)
         credential = CredentialModel(title=self.title, username=self.username, password=password)
         with Session(db) as session:
@@ -196,11 +272,38 @@ class AddCredential:
             session.commit()
 
     def check_empty_fields(self, title, username, password):
+        """
+        Checks if the fields in the form for adding or editing a credential are empty.
+
+        Args:
+            title: the title textbox value
+            username: the username textbox value
+            password: the password textbox value
+
+        Returns:
+            bool: True if any field is empty, False otherwise
+
+        Side Effects:
+            Sets a message attribute to indicate that all fields must be completed
+        """
         if title == "" or username == "" or password == "":
             self.message.set("Please complete all fields")
             return True
 
     def check_if_exists(self, title, username):
+        """
+        Checks if given a pair of title and username already exists.
+
+        Args:
+            title: the title textbox value
+            username: the username textbox value
+
+        Returns:
+            bool: True if given a pair of title and username already exists, False otherwise
+
+        Side Effects:
+            Sets the message attribute to indicate they already exists
+        """
         try:
             self.credentials_list.get_credential_from_db(title, username)
             self.message.set("The given pair of title + username already exists!")
@@ -209,18 +312,63 @@ class AddCredential:
             return False
 
     def check_password_vs_title(self, password, title):
+        """
+        Checks if given password is the same as given title.
+
+        Args:
+            password: the password to be checked
+            title: the title to be compared with
+
+        Returns:
+            True if given password as the same as given title, False otherwise
+
+        Side Effects:
+            Sets the message attribute to indicate they are the same
+        """
         if password == title:
             self.message.set("The password should not be the same as title!")
             return True
         return False
 
     def check_password_vs_username(self, password, username):
+        """
+        Checks if given password is same as given username.
+
+        Args:
+            password: the password to be checked
+            username: the username to be compared with
+
+        Returns:
+            True if given password as the same as given username, False otherwise
+
+        Side Effects:
+            Sets the message attribute to indicate they are the same
+        """
         if password == username:
             self.message.set("The password should not be the same as the username!")
             return True
         return False
 
     def check_password_complexity(self, password):
+        """
+        Checks the complexity of given password.
+
+        Args:
+            password (str): the password to be checked
+
+        Returns:
+            bool: True if the password meets the complexity requirements, False otherwise
+
+        Side Effects:
+            Sets the message attribute to indicate the missing complexity requirements
+
+        Complexity Requirements:
+            - the password must have at least 8 characters
+            - the password must have at least 1 uppercase letter
+            - the password must have at least 1 lowercase letter
+            - the password must have at least 1 digit
+            - the password must have at least 1 special character
+        """
         is_complex = True
         message = "The password must have at least:"
         if len(password) < 8:
@@ -247,6 +395,28 @@ class AddCredential:
         return is_complex
 
     def generate_password(self, letters, digits, specials):
+        """
+        Generates a random password based on the specified parameters.
+
+        Args:
+            letters: the number of letters to include in the password
+            digits: the number of digits to include in the password
+            specials: the number of special characters to include in the password
+
+        Returns:
+            password: a randomly generated password
+
+        Password generation:
+            - randomly selects digits from 0 to 9 to include in the password
+            - randomly selects letters (both uppercase and lowercase) to include in the password
+            - randomly selects special characters to include in the password
+            - shuffles the characters to create a random order
+            - joins the shuffled characters to create the final password
+
+        Example:
+            password = generate_password(5, 2, 1)
+            # Possible output: "xHBo!3c9"
+        """
         all_letters = ascii_letters
         all_digits = "".join(map(str, range(0, 10)))
         all_special_characters = punctuation
@@ -258,11 +428,21 @@ class AddCredential:
         return self.password
 
     def on_click_generate(self, event):
+        """
+        Handles a click event of the `Generate` button.
+        Generates a random password and updates the password textbox with it.
+
+        Args:
+            event: click event
+        """
         self.password = self.generate_password(letters=5, digits=2, specials=1)
         self.password_textbox.delete(0, tk.END)
         self.password_textbox.insert(0, self.password)
 
     def clear_tab(self):
+        """
+        Clears textboxes, messages and checkbox on the `Add` tab.
+        """
         self.title_textbox.delete(0, tk.END)
         self.username_textbox.delete(0, tk.END)
         self.password_textbox.delete(0, tk.END)
@@ -272,7 +452,17 @@ class AddCredential:
 
 
 class CredentialsList:
+    """Represents credentials list on a `Credentials` tab"""
+
     def __init__(self, tab, root_window, db, master_password, tabsystem):
+        """
+        Args:
+            tab: tab to place widgets
+            root_window: root window
+            db: database
+            master_password: user master password
+            tabsystem: widget manages a collection of tabs
+        """
         self.root_window = root_window
         self.db = db
         self.tabsystem = tabsystem
@@ -286,15 +476,30 @@ class CredentialsList:
         self.selected = None
 
     def configure_context_menu(self):
+        """
+        Configures a context menu that appears when right-click in the credentials list
+        """
         self.context_menu.add_command(label="Edit")
         self.context_menu.add_command(label="Delete")
 
     def show_context_menu(self, event):
+        """
+        Shows a context menu after right-click in the credentials list and triggers actions on it.
+
+        Args:
+            event: click event
+        """
         self.context_menu.post(event.x_root, event.y_root)
         self.context_menu.entryconfigure("Edit", command=lambda: self.edit_credential(self.selected))
         self.context_menu.entryconfigure("Delete", command=lambda: self.delete_credential(self.selected))
 
     def edit_credential(self, item):
+        """
+        Loads credential into textboxes on the `Add` tab for editing.
+
+        Args:
+            item: selected credential
+        """
         try:
             credential = self.get_selected_credential()
         except IndexError:
@@ -308,6 +513,12 @@ class CredentialsList:
         self.tabsystem.select(1)
 
     def delete_credential(self, item):
+        """
+        Deletes the selected credential from the database.
+
+        Args:
+            item: selected credential
+        """
         try:
             credential = self.get_selected_credential()
         except (IndexError, TclError):
@@ -318,6 +529,20 @@ class CredentialsList:
         self.load_credentials_to_tree()
 
     def get_credential_from_db(self, title, username):
+        """
+        Gets credential from the database.
+
+        Args:
+            title: title of the credential
+            username: username
+
+        Returns:
+            The credential matching the given title and username
+
+        Raises:
+            NoResultFound: if no credential is found matching the given title and username
+            MultipleResultsFound: if multiple credentials are found matching the given title and username
+        """
         with Session(self.db) as session:
             return session.query(CredentialModel).filter(
                 CredentialModel.title == title,
@@ -325,6 +550,12 @@ class CredentialsList:
                 ).one()
 
     def get_selected_credential(self):
+        """
+        Gets selected credential.
+
+        Returns:
+            The selected credential
+        """
         self.selected = self.tree.selection()[0]
         selected = self.tree.item(self.selected, "values")
         title = selected[0]
@@ -333,12 +564,21 @@ class CredentialsList:
         return credential
 
     def click_on_selected(self, event):
+        """
+        Handles the click event of the selected credential.
+
+        Args:
+            event: click event
+        """
         credential = self.get_selected_credential()
         decrypted = self.crypto.decrypt(credential.password)
         self.root_window.clipboard_clear()
         self.root_window.clipboard_append(decrypted)
 
     def load_credentials_to_tree(self):
+        """
+        Loads the credentials from the database to the tree widget on the `Credentials` tab.
+        """
         self.tree.delete(*self.tree.get_children())
         with Session(self.db) as session:
             credentials = session.query(CredentialModel).all()
@@ -346,6 +586,12 @@ class CredentialsList:
                 self.tree.insert("", "end", values=(credential.title, credential.username))
 
     def configure_tree(self, tab):
+        """
+        Configures the tree widget on the `Credentials` tab.
+
+        Args:
+            tab: tab to place widget
+        """
         scrollbar = ttk.Scrollbar(tab, orient="vertical", command=self.tree.yview)
         scrollbar.pack(side='right', fill='y')
         self.tree.configure(yscrollcommand=scrollbar.set)
@@ -359,6 +605,9 @@ class CredentialsList:
 
 if __name__ == '__main__':
     def install():
+        """
+        Creates a database and configures the user master password for the application.
+        """
         if len(sys.argv) > 1 and sys.argv[1] == "install":
             create_database(db_engine)
             master_password = input("Enter master password:\n")

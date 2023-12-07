@@ -1,7 +1,18 @@
+"""This module creates a database"""
+
 from sqlalchemy import MetaData, Table, Column, Integer, String
 
 
 def create_database(engine):
+    """
+    Creates a database.
+
+    Args:
+        engine: database engine
+
+    Returns:
+        engine: database engine
+    """
     meta = MetaData()
 
     credentials = Table(
