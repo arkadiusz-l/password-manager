@@ -387,7 +387,7 @@ class AddCredential:
             message += "\n1 digit!"
             self.message.set(message)
             is_complex = False
-        if not re.search(r"[!\"#$%&\'()*+,-./:;<=>?@\[\]^_`{|}~]", password):
+        if not re.search(r"[!\"#$%&\'()*+,-./:;<=>?@\[\]\\^_`{|}~]", password):
             message += "\n1 special character!"
             self.message.set(message)
             is_complex = False
