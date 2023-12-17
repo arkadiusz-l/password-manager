@@ -430,12 +430,17 @@ class AddCredential:
     def on_click_generate(self, event):
         """
         Handles a click event of the `Generate` button.
-        Generates a random password and updates the password textbox with it.
+        Generates a random password until it meets the complexity requirements
+        and updates the password textbox with it.
 
         Args:
             event: click event
         """
-        self.password = self.generate_password(letters=5, digits=2, specials=1)
+        is_password_complex = False
+        while not is_password_complex:
+            self.password = self.generate_password(letters=5, digits=2, specials=1)
+            is_password_complex = self.check_password_complexity(self.password)
+            self.message.set("")
         self.password_textbox.delete(0, tk.END)
         self.password_textbox.insert(0, self.password)
 
